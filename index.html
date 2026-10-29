@@ -43,8 +43,8 @@
   .card h3{font-family:var(--head);margin:0 0 4px;font-size:15px;font-weight:600;}
   .hidden{display:none !important;}
   label.field-label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:2px 0 4px;}
-  input[type=text], input[type=file]{width:100%;padding:12px 14px;border:1.5px solid var(--border-2);border-radius:12px;font-size:15px;margin:4px 0 10px;font-family:inherit;background:#f9fafc;}
-  input[type=text]:focus{outline:none;border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px var(--blue-bg);}
+  input[type=text], input[type=number], input[type=file]{width:100%;padding:12px 14px;border:1.5px solid var(--border-2);border-radius:12px;font-size:15px;margin:4px 0 10px;font-family:inherit;background:#f9fafc;}
+  input[type=text]:focus, input[type=number]:focus{outline:none;border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px var(--blue-bg);}
   input[type=text].mono{font-family:var(--mono);letter-spacing:.3px;}
   button.btn{padding:13px 16px;border:none;border-radius:12px;background:var(--blue);color:#fff;font-size:15px;font-weight:600;cursor:pointer;width:100%;font-family:var(--head);transition:background .15s,transform .1s;}
   button.btn:active{transform:scale(.98);}
@@ -106,6 +106,8 @@
   .label-photo{width:110px;height:56px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--border);display:block;margin-top:8px;margin-left:auto;}
   .orient-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:14px;font-size:13px;color:var(--muted);}
   .orient-row select{padding:7px 10px;border:1.5px solid var(--border-2);border-radius:10px;font-family:inherit;font-size:13px;background:#fff;color:var(--text);}
+  .or-sep{display:flex;align-items:center;gap:10px;margin:14px 0 2px;color:var(--muted);font-size:12.5px;}
+  .or-sep::before,.or-sep::after{content:'';flex:1;height:1px;background:var(--border);}
   .danger-card{border-color:#f5c2c4;}
   .danger-card h3{color:var(--red);}
   button.btn.red{background:var(--red);}
@@ -295,6 +297,19 @@
     <!-- IMPORT -->
     <section id="view-import" class="hidden">
       <div class="card">
+        <h3 data-i18n="importTitle">นำเข้าข้อมูล Outbound (A1)</h3>
+        <p style="color:var(--muted);font-size:13px;margin-top:4px;" data-i18n="importDesc">
+          อัปโหลดไฟล์ Excel/CSV ที่ export จาก LoisWms (ชีต A1 — ต้องมีคอลัมน์: Product, Product Name, Outbound label(TOTE), Customer, Instruction Tot Qty)
+        </p>
+        <button class="btn" id="loisPullBtn" data-i18n="btnLoisPull" style="margin-top:10px;">ดึงจาก Lois (Order Date ±14 วัน)</button>
+        <div id="loisLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
+        <div class="or-sep"><span data-i18n="orUploadFile">หรืออัปโหลดไฟล์ที่ Export จาก Lois เอง</span></div>
+        <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="margin-top:8px;">
+        <button class="btn secondary" id="importBtn" data-i18n="btnImport">นำเข้าข้อมูล</button>
+        <div id="importLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
+      </div>
+
+      <div class="card">
         <h3 data-i18n="importProductTitle">นำเข้า Product Master</h3>
         <p style="color:var(--muted);font-size:13px;margin-top:4px;" data-i18n="importProductDesc">
           อัปโหลดไฟล์จากชีต "Produc" (ต้องมีคอลัมน์: PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS) — ทำครั้งแรก แล้วอัปเดตใหม่เมื่อมีสินค้าเพิ่ม
@@ -323,16 +338,6 @@
         <div id="trLog" style="margin-top:8px;font-size:13px;white-space:pre-wrap;"></div>
       </div>
 
-      <div class="card">
-        <h3 data-i18n="importTitle">นำเข้าข้อมูล Outbound (A1)</h3>
-        <p style="color:var(--muted);font-size:13px;margin-top:4px;" data-i18n="importDesc">
-          อัปโหลดไฟล์ Excel/CSV ที่ export จาก LoisWms (ชีต A1 — ต้องมีคอลัมน์: Product, Product Name, Outbound label(TOTE), Customer, Instruction Tot Qty)
-        </p>
-        <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="margin-top:8px;">
-        <button class="btn" id="importBtn" data-i18n="btnImport">นำเข้าข้อมูล</button>
-        <div id="importLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
-      </div>
-
       <div class="card danger-card" id="adminCard">
         <h3 data-i18n="adminTitle">ลบข้อมูล Outbound ทั้งหมด (Admin)</h3>
         <p style="color:var(--muted);font-size:13px;margin-top:4px;" data-i18n="adminDesc">ลบใบ Outbound และรายการสินค้าที่ import จาก Lois ทั้งหมด (Product Master ไม่ถูกลบ) กรอกเลขพนักงาน Admin แล้วกดลบ</p>
@@ -358,6 +363,8 @@ const SUPABASE_URL = "https://bwgkcbxznwhplyxyjdky.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_8RjhbgG7Y-JCLZb93OmvKw_U_pUCxbh";
 // ตัวแปลชื่อสินค้าเป็นพม่า: URL ของ GAS Web App (Translate.gs) ลงท้าย /exec — ยังไม่ deploy ให้เว้นว่าง
 const TRANSLATE_URL = "https://script.google.com/macros/s/AKfycbydlniiYmljv9oNzobJnwGr2StPIPjndUhCnwxSyrU_W8SzaG3u9JnxqG3xBHv6FemA/exec";
+// GAS ตัวเดียวกันใช้ดึงข้อมูลจาก Lois ด้วย (Lois.gs)
+const GAS_URL = TRANSLATE_URL;
 // เลขพนักงาน Admin ที่ลบข้อมูล Outbound ทั้งหมดได้ (กรอกตอนลบ — ต้องตรงกับใน update_v2.sql)
 const ADMIN_EMPS = ['TH061378'];
 
@@ -398,7 +405,10 @@ const DICT = {
     trRemain:"ยังไม่มีชื่อพม่าอีก", trNone:"สินค้าทุกตัวมีชื่อพม่าแล้ว", trRunning:"กำลังแปล...",
     adminTitle:"ลบข้อมูล Outbound ทั้งหมด (Admin)", adminDesc:"ลบใบ Outbound และรายการสินค้าที่ import จาก Lois ทั้งหมด (Product Master ไม่ถูกลบ) กรอกเลขพนักงาน Admin แล้วกดลบ",
     btnDeleteAll:"ลบทั้งหมด", delTypeHint:"เลขพนักงาน Admin", delNeedWord:"กรอกเลขพนักงาน Admin ก่อน",
-    delConfirm:"ยืนยันลบข้อมูล Outbound ทั้งหมด? ย้อนกลับไม่ได้", delDone:"ลบข้อมูลแล้ว", delDenied:"เลขพนักงานนี้ไม่มีสิทธิ์ลบ", colCheckedAt:"เวลาเช็ค", printLayout:"รูปแบบใบพิมพ์", orientLand:"แนวนอน", orientPort:"แนวตั้ง"
+    delConfirm:"ยืนยันลบข้อมูล Outbound ทั้งหมด? ย้อนกลับไม่ได้", delDone:"ลบข้อมูลแล้ว", delDenied:"เลขพนักงานนี้ไม่มีสิทธิ์ลบ", btnLoisPull:"ดึงจาก Lois (Order Date ±14 วัน)", orUploadFile:"หรืออัปโหลดไฟล์ที่ Export จาก Lois เอง",
+    loisPulling:"กำลังล็อกอินและดึงข้อมูลจาก Lois...", loisPulled:"ดึงจาก Lois", loisRows:"แถว", loisFail:"ดึงจาก Lois ไม่สำเร็จ", loisCached:"ใช้ผลที่ดึงไว้เมื่อไม่ถึง 1 นาทีก่อน",
+    impNew:"ใบใหม่", impUpdated:"อัปเดตใบที่ยังไม่เช็ค", impSkipped:"ข้ามใบที่เริ่มเช็คแล้ว", impItems:"รายการสินค้า",
+    impNoMu:"รายการไม่พบใน Product Master (เช็คด้วยตนเอง)", impFailed:"ใบ import ไม่สำเร็จ", excelSaved:"ดาวน์โหลด Excel แล้ว", impSaving:"กำลังบันทึก...", colCheckedAt:"เวลาเช็ค", printLayout:"รูปแบบใบพิมพ์", orientLand:"แนวนอน", orientPort:"แนวตั้ง"
   },
   en: {
     appTitle:"Pick Check 100", tabScan:"Scan & Check", tabStatus:"Status", tabImport:"Import Data",
@@ -433,7 +443,10 @@ const DICT = {
     trRemain:"Still without Burmese name", trNone:"All products have Burmese names", trRunning:"Translating...",
     adminTitle:"Delete all Outbound data (Admin)", adminDesc:"Deletes all Outbound labels and items imported from Lois (Product Master is kept). Enter the admin employee ID, then press delete",
     btnDeleteAll:"Delete all", delTypeHint:"Admin employee ID", delNeedWord:"Enter the admin employee ID first",
-    delConfirm:"Delete ALL Outbound data? This cannot be undone", delDone:"Data deleted", delDenied:"This employee ID is not allowed to delete", colCheckedAt:"Checked at", printLayout:"Print layout", orientLand:"Landscape", orientPort:"Portrait"
+    delConfirm:"Delete ALL Outbound data? This cannot be undone", delDone:"Data deleted", delDenied:"This employee ID is not allowed to delete", btnLoisPull:"Pull from Lois (Order Date ±14 days)", orUploadFile:"or upload a file exported from Lois",
+    loisPulling:"Logging in and pulling data from Lois...", loisPulled:"Pulled from Lois", loisRows:"rows", loisFail:"Pull from Lois failed", loisCached:"Using the result pulled less than 1 minute ago",
+    impNew:"New labels", impUpdated:"Updated (not started)", impSkipped:"Skipped (check already started)", impItems:"items",
+    impNoMu:"item(s) not in Product Master (check manually)", impFailed:"label(s) failed to import", excelSaved:"Excel downloaded", impSaving:"Saving...", colCheckedAt:"Checked at", printLayout:"Print layout", orientLand:"Landscape", orientPort:"Portrait"
   },
   my: {
     appTitle:"Pick Check 100", tabScan:"စကင်ဖတ်စစ်ဆေးရန်", tabStatus:"အခြေအနေ", tabImport:"ဒေတာသွင်းရန်",
@@ -468,7 +481,10 @@ const DICT = {
     trRemain:"မြန်မာအမည် မရှိသေး", trNone:"ပစ္စည်းအားလုံး မြန်မာအမည် ရှိပြီး", trRunning:"ဘာသာပြန်နေသည်...",
     adminTitle:"Outbound ဒေတာအားလုံး ဖျက်ရန် (Admin)", adminDesc:"Lois မှ သွင်းထားသော Outbound ဒေတာအားလုံး ဖျက်မည် (Product Master မဖျက်ပါ) Admin ဝန်ထမ်းနံပါတ် ထည့်ပြီး ဖျက်ပါ",
     btnDeleteAll:"အားလုံးဖျက်ရန်", delTypeHint:"Admin ဝန်ထမ်းနံပါတ်", delNeedWord:"Admin ဝန်ထမ်းနံပါတ် အရင်ထည့်ပါ",
-    delConfirm:"Outbound ဒေတာအားလုံး ဖျက်မည်လား? ပြန်ယူ၍မရပါ", delDone:"ဖျက်ပြီးပါပြီ", delDenied:"ဤဝန်ထမ်းနံပါတ်ဖြင့် ဖျက်ခွင့်မရှိပါ", colCheckedAt:"စစ်ဆေးချိန်", printLayout:"ပရင့်ပုံစံ", orientLand:"အလျားလိုက်", orientPort:"ဒေါင်လိုက်"
+    delConfirm:"Outbound ဒေတာအားလုံး ဖျက်မည်လား? ပြန်ယူ၍မရပါ", delDone:"ဖျက်ပြီးပါပြီ", delDenied:"ဤဝန်ထမ်းနံပါတ်ဖြင့် ဖျက်ခွင့်မရှိပါ", btnLoisPull:"Lois မှ ဆွဲယူရန် (Order Date ±14 ရက်)", orUploadFile:"သို့မဟုတ် Lois မှ Export ဖိုင်ကို တင်ပါ",
+    loisPulling:"Lois သို့ ဝင်ရောက်ပြီး ဒေတာဆွဲယူနေသည်...", loisPulled:"Lois မှ ဆွဲယူပြီး", loisRows:"တန်း", loisFail:"Lois မှ ဆွဲယူ၍မရပါ", loisCached:"၁ မိနစ်အတွင်း ဆွဲထားသော ရလဒ်ကို သုံးသည်",
+    impNew:"လေဘယ်အသစ်", impUpdated:"ပြင်ဆင်ပြီး (မစစ်ရသေး)", impSkipped:"ကျော်ခဲ့သည် (စစ်ဆေးပြီး/စစ်နေ)", impItems:"ပစ္စည်း",
+    impNoMu:"Product Master တွင် မရှိ (ကိုယ်တိုင်စစ်ပါ)", impFailed:"လေဘယ် သွင်း၍မရ", excelSaved:"Excel ဒေါင်းလုဒ်ပြီး", impSaving:"သိမ်းနေသည်...", colCheckedAt:"စစ်ဆေးချိန်", printLayout:"ပရင့်ပုံစံ", orientLand:"အလျားလိုက်", orientPort:"ဒေါင်လိုက်"
   }
 };
 let LANG = localStorage.getItem('pc100_lang') || 'th';
@@ -1165,7 +1181,96 @@ document.getElementById('importProductBtn').addEventListener('click', async ()=>
   btn.disabled = false;
 });
 
-/* ====================== Import: Outbound (A1) ====================== */
+/* ====================== Import: Outbound (WMS) ======================
+   กติกาใบซ้ำ: ใบใหม่ = เพิ่ม, ใบที่ยังไม่เริ่มเช็ค (pending) = อัปเดตตาม Lois,
+   ใบที่ กำลังเช็ค / ครบแล้ว / ส่งกลับ Picking = ไม่แตะ
+==================================================================== */
+const STARTED_STATUSES = ['checking', 'checked', 'returned'];
+
+// recs: [{ label, product, name, customer, qty }]
+async function importOutboundRows_(recs, batchName, log){
+  const byLabel = {};
+  recs.forEach(r=>{
+    const code = normalizeLabelCode_(r.label);
+    if(!code) return;
+    if(!byLabel[code]) byLabel[code] = { customer: r.customer || '', items: [] };
+    byLabel[code].items.push({
+      product_code: normalizeId_(r.product),
+      product_name: r.name || '',
+      instruction_qty: Number(r.qty) || 0
+    });
+  });
+  const allCodes = Object.keys(byLabel);
+
+  // สถานะใบเดิมในระบบ
+  const existing = {};
+  for(const part of chunk(allCodes, 300)){
+    const { data, error } = await sb.from('outbound_labels').select('label_code, status').in('label_code', part);
+    if(error) throw error;
+    (data || []).forEach(l => { existing[l.label_code] = l.status; });
+  }
+  const skipped = allCodes.filter(c => STARTED_STATUSES.includes(existing[c]));
+  const codes = allCodes.filter(c => !STARTED_STATUSES.includes(existing[c]));
+  const newCount = codes.filter(c => !(c in existing)).length;
+
+  // MU_CS จาก Product Master
+  const muCsMap = {};
+  const prodCodes = [...new Set(codes.flatMap(c => byLabel[c].items.map(i => i.product_code)).filter(Boolean))];
+  for(const part of chunk(prodCodes, 300)){
+    const { data, error } = await sb.from('products').select('product_code, mu_cs').in('product_code', part);
+    if(error) throw error;
+    (data || []).forEach(p => { muCsMap[p.product_code] = p.mu_cs; });
+  }
+
+  let notFound = 0, itemCount = 0, done = 0;
+  const failed = [];
+  const nowIso = new Date().toISOString();
+  const itemRows = code => byLabel[code].items.map(it => {
+    const mu = muCsMap[it.product_code];
+    return { label_code: code, ...it, mu_cs: mu ?? null,
+             qty_cs: (mu && mu > 0) ? +(it.instruction_qty / mu).toFixed(2) : null };
+  });
+
+  for(const part of chunk(codes, 200)){
+    // 1) หัวใบ
+    const { error: eH } = await sb.from('outbound_labels').upsert(part.map(code => ({
+      label_code: code, customer_store: byLabel[code].customer, total_items: byLabel[code].items.length,
+      checked_items: 0, short_items: 0, status: 'pending', imported_at: nowIso, imported_batch: batchName
+    })), { onConflict: 'label_code' });
+    if(eH){ part.forEach(c => failed.push(c + ' (header: ' + eH.message + ')')); continue; }
+    // 2) ลบรายการเดิมของใบที่ยังไม่เริ่มเช็ค
+    const { error: eD } = await sb.from('outbound_label_items').delete().in('label_code', part);
+    if(eD){ part.forEach(c => failed.push(c + ' (delete: ' + eD.message + ')')); continue; }
+    // 3) ใส่รายการใหม่ (ทั้งชุด ถ้าพลาดค่อยแยกทีละใบเพื่อหาใบที่มีปัญหา)
+    const rowsAll = part.flatMap(itemRows);
+    const { error: eI } = await sb.from('outbound_label_items').insert(rowsAll);
+    if(!eI){
+      itemCount += rowsAll.length;
+    } else {
+      for(const code of part){
+        const rs = itemRows(code);
+        const { error: e1 } = await sb.from('outbound_label_items').insert(rs);
+        if(e1){
+          failed.push(code + ' (insert: ' + e1.message + ')');
+          await sb.from('outbound_labels').update({ total_items: 0 }).eq('label_code', code);
+        } else itemCount += rs.length;
+      }
+    }
+    done += part.length;
+    if(log) log.textContent = `${T('impSaving')} ${done}/${codes.length}`;
+  }
+  codes.forEach(c => byLabel[c].items.forEach(it => { if(muCsMap[it.product_code] === undefined) notFound++; }));
+  return { labels: allCodes.length, newCount, updated: codes.length - newCount, skipped: skipped.length, itemCount, notFound, failed };
+}
+
+function importSummaryText_(r){
+  return `${T('importDone')}\n`
+    + `${T('impNew')}: ${r.newCount} · ${T('impUpdated')}: ${r.updated} · ${T('impSkipped')}: ${r.skipped}\n`
+    + `${T('impItems')}: ${r.itemCount}`
+    + (r.notFound ? `\n⚠ ${r.notFound} ${T('impNoMu')}` : '')
+    + (r.failed.length ? `\n\n❌ ${r.failed.length} ${T('impFailed')}:\n` + r.failed.slice(0,20).join('\n') + (r.failed.length > 20 ? `\n… +${r.failed.length-20}` : '') : '');
+}
+
 document.getElementById('importBtn').addEventListener('click', async ()=>{
   const file = document.getElementById('importFile').files[0];
   const log = document.getElementById('importLog');
@@ -1174,104 +1279,92 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
   btn.disabled = true;
   log.textContent = T('importing');
   try{
-    const data = await file.arrayBuffer();
-    const wb = XLSX.read(data, { type: 'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
-
-    function findKey(row, candidates){
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+    if(!rows.length){ log.textContent = 'ไฟล์ไม่มีข้อมูล'; return; }
+    const findKey = (row, cands) => {
       const keys = Object.keys(row);
-      for(const c of candidates){
-        const k = keys.find(k=>k.trim().toLowerCase() === c.toLowerCase());
-        if(k) return k;
-      }
+      for(const c of cands){ const k = keys.find(k => k.trim().toLowerCase() === c.toLowerCase()); if(k) return k; }
       return null;
-    }
-    if(!rows.length){ log.textContent = 'ไฟล์ไม่มีข้อมูล'; btn.disabled=false; return; }
+    };
     const kLabel = findKey(rows[0], ['Outbound label(TOTE)','Outbound label']);
     const kProduct = findKey(rows[0], ['Product']);
     const kName = findKey(rows[0], ['Product Name']);
     const kCustomer = findKey(rows[0], ['Customer']);
     const kQty = findKey(rows[0], ['Instruction Tot Qty','Instruction Total Qty']);
-
     if(!kLabel || !kProduct || !kQty){
       log.textContent = 'ไม่พบคอลัมน์ที่ต้องการ (Outbound label(TOTE) / Product / Instruction Tot Qty) — ตรวจชื่อหัวคอลัมน์ในไฟล์';
-      btn.disabled = false; return;
+      return;
     }
-
-    const byLabel = {};
-    rows.forEach(r=>{
-      const labelCode = normalizeLabelCode_(r[kLabel]);
-      if(!labelCode) return;
-      if(!byLabel[labelCode]) byLabel[labelCode] = { customer: r[kCustomer]||'', items: [] };
-      byLabel[labelCode].items.push({
-        product_code: normalizeId_(r[kProduct]),
-        product_name: r[kName]||'',
-        instruction_qty: Number(r[kQty])||0
-      });
-    });
-
-    const labelCodes = Object.keys(byLabel);
-
-    const allProductCodes = [...new Set(rows.map(r => normalizeId_(r[kProduct])).filter(Boolean))];
-    const muCsMap = {};
-    for(const codes of chunk(allProductCodes, 300)){
-      const { data: prods, error: pErr } = await sb.from('products').select('product_code, mu_cs').in('product_code', codes);
-      if(pErr){ log.textContent = 'Error (products lookup): ' + pErr.message; btn.disabled=false; return; }
-      (prods||[]).forEach(p => { muCsMap[p.product_code] = p.mu_cs; });
-    }
-    let notFoundCount = 0;
-
-    log.textContent = `พบ ${labelCodes.length} Outbound label, ${rows.length} รายการสินค้า — กำลังนำเข้า...`;
-
-    let done = 0;
-    const failedLabels = [];
-    for(const code of labelCodes){
-      const g = byLabel[code];
-      const { error: eHead } = await sb.from('outbound_labels').upsert({
-        label_code: code,
-        customer_store: g.customer,
-        total_items: g.items.length,
-        checked_items: 0,
-        status: 'pending',
-        imported_at: new Date().toISOString(),
-        imported_batch: file.name
-      }, { onConflict: 'label_code' });
-      if(eHead){ failedLabels.push(code + ' (header: ' + eHead.message + ')'); continue; }
-
-      const { error: eDel } = await sb.from('outbound_label_items').delete().eq('label_code', code);
-      if(eDel){ failedLabels.push(code + ' (delete: ' + eDel.message + ')'); continue; }
-
-      const rowsToInsert = g.items.map(it => {
-        const muCs = muCsMap[it.product_code];
-        if(muCs === undefined) notFoundCount++;
-        return {
-          label_code: code,
-          ...it,
-          mu_cs: muCs ?? null,
-          qty_cs: (muCs && muCs > 0) ? +(it.instruction_qty / muCs).toFixed(2) : null
-        };
-      });
-      const { error: eIns, data: insData } = await sb.from('outbound_label_items').insert(rowsToInsert).select('id');
-      if(eIns){
-        failedLabels.push(code + ' (insert: ' + eIns.message + ')');
-        // header already says total_items=N but 0 rows actually landed — reflect reality
-        await sb.from('outbound_labels').update({ total_items: 0 }).eq('label_code', code);
-      } else if(!insData || insData.length !== rowsToInsert.length){
-        failedLabels.push(code + ` (insert: expected ${rowsToInsert.length} rows, got ${insData ? insData.length : 0})`);
-        await sb.from('outbound_labels').update({ total_items: insData ? insData.length : 0 }).eq('label_code', code);
-      }
-      done++;
-      log.textContent = `นำเข้าแล้ว ${done}/${labelCodes.length} ใบ...`;
-    }
-    log.textContent = `${T('importDone')}: ${labelCodes.length} Outbound label, ${rows.length} รายการสินค้า`
-      + (notFoundCount ? `\n⚠ ${notFoundCount} รายการไม่พบใน Product Master (เช็คด้วยตนเอง)` : '')
-      + (failedLabels.length ? `\n\n❌ ${failedLabels.length} ใบ import รายการสินค้าไม่สำเร็จ:\n` + failedLabels.slice(0,20).join('\n') + (failedLabels.length>20 ? `\n…และอีก ${failedLabels.length-20} ใบ` : '') : '');
-    toast(failedLabels.length ? ('นำเข้าสำเร็จบางส่วน — มี ' + failedLabels.length + ' ใบผิดพลาด') : T('importDone'));
+    const recs = rows.map(r => ({ label: r[kLabel], product: r[kProduct], name: kName ? r[kName] : '', customer: kCustomer ? r[kCustomer] : '', qty: r[kQty] }));
+    const res = await importOutboundRows_(recs, file.name, log);
+    log.textContent = importSummaryText_(res);
+    toast(res.failed.length ? T('impFailed') : T('importDone'));
   }catch(err){
     log.textContent = 'Error: ' + err.message;
+  }finally{
+    btn.disabled = false;
   }
-  btn.disabled = false;
+});
+
+/* ====================== ดึงจาก Lois (ผ่าน GAS) ====================== */
+// คอลัมน์ Excel เรียงเหมือนปุ่ม Export ของ Lois (Classification)
+const LOIS_COLS = [
+  ['LIST_NO','TASK ID'],['LOC_CTGR_CD','Classification Type'],['BLD_MNG_NO','Work Area'],['ORD_STAT_CD','Work Status'],
+  ['CANCEL_YN','Order Cancellation or not(B2C)'],['ORD_NO','Order No'],['ORD_LINENO','Row No'],['SKU_CD','Product'],
+  ['CNNT','Product Name'],['BOX_NO','Outbound label(TOTE)'],['CLNT_CD','Customer'],['CLNT_NM','Customer Name'],
+  ['SLOT_SEQ','Slot'],['LABEL_SEQ','Label Seq'],['LOC_CD','Location'],['UOM_CD','UOM Code'],['QTY','Instruction Tot Qty'],
+  ['INS_TYP','Instruction Type'],['PICK_QTY','Picking Tot Qty'],['INSP_RESULT','Weight Inspection'],['INSP_FORCE_YN','Force Inspection'],
+  ['INSP_DTM','Inspection Date'],['SCAN_YN','Loading Scan'],['SCAN_FORCE_YN','Force Loading'],['SCAN_DTM','Loading Date'],
+  ['MSG_CNNT1','Remark'],['CRE_DTM','Generation Date'],['TASK_SEQ','Work Shift'],['REGR_ID','Generator'],
+  ['MOD_DTM','Last Modified Datetime'],['PICK_COMP_DTM','Pick Complete'],['MODR_ID','Modifier'],['DSCH_NO','Trip No'],
+  ['SHOP_CD','Drop'],['VOLUMN','Volumn']
+];
+const LOIS_STAT = { '0':'Unworked', '1':'Working', '2':'Completed' };
+
+function downloadLoisExcel_(rows, stamp){
+  const aoa = [['NO', ...LOIS_COLS.map(c => c[1])]];
+  rows.forEach((r, i) => {
+    aoa.push([i + 1, ...LOIS_COLS.map(([f]) => {
+      let v = r[f];
+      if(v == null) return '';
+      if(f === 'ORD_STAT_CD') v = LOIS_STAT[String(v)] || v;
+      return (typeof v === 'string') ? v.trim() : v;
+    })]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Classification');
+  XLSX.writeFile(wb, `classification_${stamp}.xlsx`);
+}
+
+document.getElementById('loisPullBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('loisPullBtn');
+  const log = document.getElementById('loisLog');
+  if(!GAS_URL){ log.textContent = T('trNoUrl'); return; }
+  btn.disabled = true;
+  log.textContent = T('loisPulling');
+  try{
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'lois' })
+    });
+    const j = await res.json();
+    if(!j.ok) throw new Error(j.error || 'unknown');
+    const rows = j.rows || [];
+    const head = `${T('loisPulled')}: ${j.from} ~ ${j.to} · ${rows.length} ${T('loisRows')}` + (j.cached ? `\n(${T('loisCached')})` : '');
+    log.textContent = head;
+    downloadLoisExcel_(rows, j.pulledAt || new Date().toISOString().replace(/\D/g,'').slice(0,14));
+    const recs = rows.map(r => ({ label: r.BOX_NO, product: r.SKU_CD, name: r.CNNT, customer: r.CLNT_CD, qty: r.QTY }));
+    const sum = await importOutboundRows_(recs, 'LOIS ' + (j.pulledAt || ''), log);
+    log.textContent = head + `\n${T('excelSaved')}\n\n` + importSummaryText_(sum);
+    toast(sum.failed.length ? T('impFailed') : T('importDone'));
+  }catch(err){
+    log.textContent = T('loisFail') + ': ' + err.message;
+  }finally{
+    btn.disabled = false;
+  }
 });
 
 /* ====================== Init ====================== */

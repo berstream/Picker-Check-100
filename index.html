@@ -4,61 +4,139 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Pick Check 100 - WFDC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Sarabun:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
   :root{
-    --blue:#1565c0; --blue-d:#0d47a1; --green:#2e7d32; --red:#c62828; --amber:#f9a825;
-    --bg:#f4f6f8; --card:#ffffff; --text:#1a1a1a; --muted:#6b7280; --border:#e0e3e8;
+    --blue:#2f6fed; --blue-d:#1f54c2; --blue-bg:#eaf0fe;
+    --green:#1fa864; --green-bg:#e6f8ee; --red:#e5484d; --red-bg:#fdecec; --amber:#f5a524; --amber-bg:#fef3e0;
+    --bg:#f3f5fa; --card:#ffffff; --text:#1f2733; --muted:#7b8599; --border:#e6e9f0; --border-2:#d7dce6;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --head:'Kanit',sans-serif;
+    --sans:'Sarabun','Noto Sans Myanmar',sans-serif;
+    --radius:16px;
+    --shadow:0 2px 10px rgba(31,39,51,.06), 0 1px 2px rgba(31,39,51,.04);
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);}
-  header{background:var(--blue-d);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;}
-  header h1{font-size:16px;margin:0;font-weight:600;}
-  header .emp{font-size:12px;opacity:.9;}
-  select#langSel{background:#fff;border:none;border-radius:6px;padding:4px 6px;font-size:12px;}
-  nav{display:flex;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:48px;z-index:19;overflow-x:auto;}
-  nav button{flex:1;min-width:90px;padding:10px 6px;background:none;border:none;font-size:13px;color:var(--muted);border-bottom:3px solid transparent;}
-  nav button.active{color:var(--blue-d);border-bottom-color:var(--blue-d);font-weight:600;}
-  main{padding:14px;max-width:720px;margin:0 auto;padding-bottom:60px;}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
+  html,body{margin:0;}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;}
+  header{background:var(--blue);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;box-shadow:0 2px 12px rgba(47,111,237,.25);}
+  header .brand{display:flex;align-items:center;gap:10px;}
+  header .brand .mark{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex:none;}
+  header .brand .mark svg{width:19px;height:19px;stroke:#fff;stroke-width:2.2;}
+  header h1{font-family:var(--head);font-size:16px;margin:0;font-weight:600;letter-spacing:.2px;}
+  header .sub{font-size:10.5px;color:#d7e3ff;letter-spacing:.4px;margin-top:1px;}
+  header .emp{font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.18);padding:5px 10px;border-radius:999px;letter-spacing:.3px;}
+  select#langSel{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:5px 8px;font-size:12px;font-family:inherit;}
+  select#langSel option{color:#000;}
+  nav{display:flex;gap:4px;background:#fff;padding:8px 10px;border-bottom:1px solid var(--border);position:sticky;top:60px;z-index:19;overflow-x:auto;}
+  nav button{flex:1;min-width:92px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 6px;background:none;border:none;border-radius:12px;font-size:12px;font-weight:600;color:var(--muted);font-family:var(--head);cursor:pointer;transition:background .15s,color .15s;}
+  nav button svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;}
+  nav button.active{color:var(--blue-d);background:var(--blue-bg);}
+  main{padding:16px;max-width:760px;margin:0 auto;padding-bottom:70px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .card h3{font-family:var(--head);margin:0 0 4px;font-size:15px;font-weight:600;}
   .hidden{display:none !important;}
-  input[type=text], input[type=file]{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:15px;margin:6px 0;}
-  button.btn{padding:11px 16px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-size:15px;font-weight:600;cursor:pointer;width:100%;}
-  button.btn.secondary{background:#eceff3;color:var(--text);}
+  label.field-label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:2px 0 4px;}
+  input[type=text], input[type=file]{width:100%;padding:12px 14px;border:1.5px solid var(--border-2);border-radius:12px;font-size:15px;margin:4px 0 10px;font-family:inherit;background:#f9fafc;}
+  input[type=text]:focus{outline:none;border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px var(--blue-bg);}
+  input[type=text].mono{font-family:var(--mono);letter-spacing:.3px;}
+  button.btn{padding:13px 16px;border:none;border-radius:12px;background:var(--blue);color:#fff;font-size:15px;font-weight:600;cursor:pointer;width:100%;font-family:var(--head);transition:background .15s,transform .1s;}
+  button.btn:active{transform:scale(.98);}
+  button.btn:hover{background:var(--blue-d);}
+  button.btn.secondary{background:#eef1f6;color:var(--text);}
+  button.btn.secondary:hover{background:#e3e8f0;}
+  button.btn.secondary.active{background:var(--blue);color:#fff;}
   button.btn.green{background:var(--green);}
-  button.btn:disabled{opacity:.5;}
+  button.btn.green:hover{background:#158b54;}
+  button.btn.outline{background:#fff;color:var(--blue-d);border:1.5px solid var(--blue);}
+  button.btn:disabled{opacity:.5;cursor:not-allowed;}
   .row{display:flex;gap:8px;}
   .row>*{flex:1;}
-  .item-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
-  .item-row:last-child{border-bottom:none;}
-  .item-row .meta{flex:1;}
-  .item-row .meta .code{font-size:12px;color:var(--muted);}
-  .item-row .meta .name{font-size:14px;}
-  .item-row .qty{font-size:14px;font-weight:600;margin:0 10px;white-space:nowrap;}
-  .chk{width:26px;height:26px;}
-  .badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:12px;font-weight:600;}
-  .badge.pending{background:#fff3e0;color:#e65100;}
-  .badge.checking{background:#e3f2fd;color:var(--blue-d);}
-  .badge.checked{background:#e8f5e9;color:var(--green);}
-  #reader{width:100%;border-radius:10px;overflow:hidden;}
-  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;z-index:50;max-width:90%;text-align:center;}
-  .status-card{display:flex;justify-content:space-between;align-items:center;}
-  .label-code{font-weight:700;font-size:16px;}
-  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:-3px;margin-right:6px;}
+  .item-table{width:100%;border-collapse:separate;border-spacing:0 6px;margin-top:4px;}
+  .item-table th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);padding:0 10px 4px;}
+  .item-table td{padding:10px;background:#f9fafc;vertical-align:middle;font-size:14px;}
+  .item-table td:first-child{border-radius:10px 0 0 10px;}
+  .item-table td:last-child{border-radius:0 10px 10px 0;}
+  .item-table .code{font-family:var(--mono);font-size:11.5px;color:var(--muted);}
+  .item-table .mu{font-family:var(--mono);font-size:11px;color:var(--muted);}
+  .item-table .cs{font-weight:700;font-size:17px;text-align:center;white-space:nowrap;color:var(--blue-d);}
+  .item-table .warn{color:var(--red);font-size:12px;font-weight:600;}
+  .chk{width:24px;height:24px;accent-color:var(--green);}
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;font-size:11.5px;font-weight:600;}
+  .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .badge.pending{background:var(--amber-bg);color:var(--amber);}
+  .badge.checking{background:var(--blue-bg);color:var(--blue-d);}
+  .badge.checking::before{animation:pulse 1.4s ease-in-out infinite;}
+  .badge.checked{background:var(--green-bg);color:var(--green);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+  #reader{width:100%;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:11px 20px;border-radius:999px;font-size:14px;z-index:50;max-width:90%;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.2);}
+  .labelhead{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px dashed var(--border-2);padding-bottom:12px;margin-bottom:4px;}
+  .label-code{font-family:var(--mono);font-weight:700;font-size:19px;letter-spacing:.3px;color:var(--blue-d);}
+  .label-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:6px;}
   @keyframes spin{to{transform:rotate(360deg);}}
-  .footer-credit{text-align:center;color:var(--muted);font-size:11px;margin-top:20px;}
-  .progressbar{height:6px;background:#eceff3;border-radius:3px;overflow:hidden;margin-top:6px;}
-  .progressbar>div{height:100%;background:var(--green);}
-  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:40;}
-  .modal{background:#fff;border-radius:10px;padding:18px;max-width:340px;width:90%;}
+  .footer-credit{text-align:center;color:var(--muted);font-size:11px;margin-top:22px;}
+  .progressbar{height:8px;background:#eceff3;border-radius:999px;overflow:hidden;margin-top:8px;}
+  .progressbar>div{height:100%;background:var(--green);border-radius:999px;transition:width .2s;}
+  .modal-bg{position:fixed;inset:0;background:rgba(20,28,40,.5);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px;}
+  .modal{background:#fff;border-radius:var(--radius);padding:20px;max-width:360px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .modal p{margin-top:0;}
+
+  /* ===== Status: flat rounded data table ===== */
+  .table-wrap{background:#fff;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+  table.dt{width:100%;border-collapse:collapse;font-size:13.5px;}
+  table.dt thead th{background:#f7f8fb;text-align:left;padding:11px 14px;font-size:11px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+  table.dt thead th:hover{color:var(--blue-d);}
+  table.dt tbody td{padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  table.dt tbody tr:last-child td{border-bottom:none;}
+  table.dt tbody tr:hover{background:#f7f9fc;}
+  table.dt .code{font-family:var(--mono);font-weight:600;}
+  table.dt .progress-cell{display:flex;align-items:center;gap:6px;}
+  table.dt .progress-cell .mini{width:46px;height:5px;background:#eceff3;border-radius:999px;overflow:hidden;flex:none;}
+  table.dt .progress-cell .mini>div{height:100%;background:var(--green);border-radius:999px;}
+  .filter-chips{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+  .filter-chips button{flex:none;width:auto;padding:9px 16px;font-size:13px;border-radius:999px;}
+  .empty-state{text-align:center;padding:40px 16px;color:var(--muted);font-size:13px;}
+
+  /* ===== Print sheet (mirrors paper "Outbound Checker") ===== */
+  #printSheet{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printSheet, #printSheet *{visibility:visible;}
+    #printSheet{display:block;position:absolute;top:0;left:0;width:100%;}
+    @page{margin:12mm;}
+  }
+  .ps-wrap{font-family:'Sarabun','TH Sarabun New',sans-serif;color:#000;padding:4px;}
+  .ps-head{display:flex;justify-content:space-between;align-items:flex-start;border:2px solid #000;padding:10px 14px;margin-bottom:0;}
+  .ps-code{font-size:26px;font-weight:700;font-family:var(--mono);}
+  .ps-store{font-size:20px;font-weight:700;margin-top:2px;}
+  .ps-meta{text-align:right;font-size:13px;}
+  table.ps-table{width:100%;border-collapse:collapse;margin-top:0;}
+  table.ps-table th,table.ps-table td{border:1px solid #000;padding:6px 8px;font-size:14px;}
+  table.ps-table th{background:#e9edf3;text-transform:none;text-align:center;font-weight:700;}
+  table.ps-table td.num{text-align:center;font-weight:700;font-size:17px;}
+  table.ps-table td.chkbox{text-align:center;width:46px;}
+  table.ps-table td.chkbox .box{width:20px;height:20px;border:1.5px solid #000;display:inline-block;}
+  .ps-sign{display:flex;justify-content:space-between;margin-top:26px;padding:0 10px;}
+  .ps-sign div{width:46%;border-top:1px solid #000;padding-top:4px;font-size:13px;text-align:center;}
 </style>
 </head>
 <body>
 
 <header>
-  <h1 data-i18n="appTitle">Pick Check 100</h1>
+  <div class="brand">
+    <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+    <div>
+      <h1 data-i18n="appTitle">Pick Check 100</h1>
+      <div class="sub">WFDC Wangnoi</div>
+    </div>
+  </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <span class="emp" id="empBadge"></span>
     <select id="langSel">
@@ -73,19 +151,28 @@
 <main id="loginView">
   <div class="card">
     <h3 data-i18n="loginTitle">เข้าสู่ระบบ</h3>
-    <p data-i18n="loginDesc" style="color:var(--muted);font-size:13px;">กรอกเลขพนักงาน (เช่น TH061378)</p>
-    <input type="text" id="empInput" placeholder="TH061378" maxlength="9" autocapitalize="characters">
+    <p data-i18n="loginDesc" style="color:var(--muted);font-size:13px;margin-top:2px;">กรอกเลขพนักงาน (เช่น TH061378)</p>
+    <input type="text" id="empInput" class="mono" placeholder="TH061378" maxlength="9" autocapitalize="characters" style="margin-top:10px;">
     <button class="btn" id="loginBtn" data-i18n="loginBtn">เข้าสู่ระบบ</button>
-    <div id="loginErr" style="color:var(--red);font-size:13px;margin-top:6px;"></div>
+    <div id="loginErr" style="color:var(--red);font-size:13px;margin-top:8px;"></div>
   </div>
 </main>
 
 <!-- APP -->
 <div id="appView" class="hidden">
   <nav>
-    <button class="tab active" data-tab="scan" data-i18n="tabScan">สแกนเช็ค</button>
-    <button class="tab" data-tab="status" data-i18n="tabStatus">สถานะ</button>
-    <button class="tab" data-tab="import" data-i18n="tabImport">นำเข้าข้อมูล</button>
+    <button class="tab active" data-tab="scan">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M3 17v2a2 2 0 0 0 2 2h2M21 7V5a2 2 0 0 0-2-2h-2M21 17v2a2 2 0 0 1-2 2h-2M7 12h10"/></svg>
+      <span data-i18n="tabScan">สแกนเช็ค</span>
+    </button>
+    <button class="tab" data-tab="status">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V10M12 19V5M20 19v-7"/></svg>
+      <span data-i18n="tabStatus">สถานะ</span>
+    </button>
+    <button class="tab" data-tab="import">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg>
+      <span data-i18n="tabImport">นำเข้าข้อมูล</span>
+    </button>
   </nav>
 
   <main>
@@ -94,7 +181,7 @@
       <div class="card" id="scanStartCard">
         <button class="btn" id="startScanBtn" data-i18n="btnStartScan">เปิดกล้องสแกน Outbound Label</button>
         <div style="margin-top:10px;" class="row">
-          <input type="text" id="manualCodeInput" placeholder="หรือพิมพ์เลข Outbound label เอง">
+          <input type="text" id="manualCodeInput" class="mono" placeholder="หรือพิมพ์เลข Outbound label เอง" style="margin:0;">
           <button class="btn secondary" id="manualLookupBtn" data-i18n="btnLookup" style="flex:0 0 90px;">ค้นหา</button>
         </div>
         <div id="reader" class="hidden" style="margin-top:10px;"></div>
@@ -102,50 +189,74 @@
       </div>
 
       <div class="card hidden" id="labelCard">
-        <div class="status-card">
+        <div class="labelhead">
           <div>
             <div class="label-code" id="lblCode"></div>
-            <div style="font-size:13px;color:var(--muted);" id="lblStore"></div>
+            <div class="label-sub" id="lblStore"></div>
           </div>
           <span class="badge" id="lblBadge"></span>
         </div>
         <div class="progressbar"><div id="lblProgressBar" style="width:0%"></div></div>
-        <div id="itemsList" style="margin-top:10px;"></div>
-        <button class="btn green" id="finalizeBtn" style="margin-top:12px;" data-i18n="btnFinalize">ยืนยันเช็คครบ 100%</button>
+        <table class="item-table" id="itemsTable">
+          <thead>
+            <tr>
+              <th style="width:30px;"></th>
+              <th data-i18n="colProduct">สินค้า</th>
+              <th style="text-align:center;" data-i18n="colCs">Case</th>
+            </tr>
+          </thead>
+          <tbody id="itemsList"></tbody>
+        </table>
+        <div class="row" style="margin-top:14px;">
+          <button class="btn outline" id="printBtn" data-i18n="btnPrint">พิมพ์ใบเช็ค</button>
+          <button class="btn green" id="finalizeBtn" data-i18n="btnFinalize">ยืนยันเช็คครบ 100%</button>
+        </div>
         <button class="btn secondary" id="closeLabelBtn" style="margin-top:8px;" data-i18n="btnClose">ปิด / สแกนใบถัดไป</button>
       </div>
     </section>
 
     <!-- STATUS -->
     <section id="view-status" class="hidden">
-      <div class="card">
-        <div class="row" style="margin-bottom:6px;">
-          <button class="btn secondary filterBtn active" data-f="all" data-i18n="fAll">ทั้งหมด</button>
-          <button class="btn secondary filterBtn" data-f="pending" data-i18n="fPending">ยังไม่เช็ค</button>
-          <button class="btn secondary filterBtn" data-f="checked" data-i18n="fChecked">เช็คแล้ว</button>
-        </div>
+      <div class="filter-chips">
+        <button class="btn secondary filterBtn active" data-f="all" data-i18n="fAll">ทั้งหมด</button>
+        <button class="btn secondary filterBtn" data-f="pending" data-i18n="fPending">ยังไม่เช็ค</button>
+        <button class="btn secondary filterBtn" data-f="checked" data-i18n="fChecked">เช็คแล้ว</button>
       </div>
-      <div id="statusList"></div>
+      <div class="table-wrap">
+        <table class="dt" id="statusTable">
+          <thead>
+            <tr>
+              <th data-sort="label_code" data-i18n="colLabel">Outbound Label</th>
+              <th data-sort="customer_store" data-i18n="colStore">Store</th>
+              <th data-sort="checked_items" data-i18n="colProgress">รายการ</th>
+              <th data-sort="status" data-i18n="colStatus">สถานะ</th>
+              <th data-sort="checked_by" data-i18n="colCheckedBy">เช็คโดย</th>
+            </tr>
+          </thead>
+          <tbody id="statusList"></tbody>
+        </table>
+        <div id="statusEmpty" class="empty-state hidden" data-i18n="noData">ไม่มีข้อมูล</div>
+      </div>
     </section>
 
     <!-- IMPORT -->
     <section id="view-import" class="hidden">
       <div class="card">
         <h3 data-i18n="importProductTitle">นำเข้า Product Master</h3>
-        <p style="color:var(--muted);font-size:13px;" data-i18n="importProductDesc">
+        <p style="color:var(--muted);font-size:13px;margin-top:4px;" data-i18n="importProductDesc">
           อัปโหลดไฟล์จากชีต "Produc" (ต้องมีคอลัมน์: PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS) — ทำครั้งแรก แล้วอัปเดตใหม่เมื่อมีสินค้าเพิ่ม
         </p>
-        <input type="file" id="importProductFile" accept=".xlsx,.xls,.csv">
+        <input type="file" id="importProductFile" accept=".xlsx,.xls,.csv" style="margin-top:8px;">
         <button class="btn secondary" id="importProductBtn" data-i18n="btnImportProduct">นำเข้า Product Master</button>
         <div id="importProductLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
       </div>
 
       <div class="card">
         <h3 data-i18n="importTitle">นำเข้าข้อมูล Outbound (A1)</h3>
-        <p style="color:var(--muted);font-size:13px;" data-i18n="importDesc">
+        <p style="color:var(--muted);font-size:13px;margin-top:4px;" data-i18n="importDesc">
           อัปโหลดไฟล์ Excel/CSV ที่ export จาก LoisWms (ชีต A1 — ต้องมีคอลัมน์: Product, Product Name, Outbound label(TOTE), Customer, Instruction Tot Qty)
         </p>
-        <input type="file" id="importFile" accept=".xlsx,.xls,.csv">
+        <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="margin-top:8px;">
         <button class="btn" id="importBtn" data-i18n="btnImport">นำเข้าข้อมูล</button>
         <div id="importLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
       </div>
@@ -155,12 +266,12 @@
 
 <div class="footer-credit">CJ IT By Nutdanai Pathsith — WFDC</div>
 
+<!-- PRINT-ONLY SHEET (built dynamically, mirrors the paper "Outbound Checker" form) -->
+<div id="printSheet"></div>
+
 <script>
 /* ====================== CONFIG ======================
-   TODO: ใส่ค่าจริงหลังสร้าง Supabase project "Pick Check 100"
    Supabase Dashboard > Project Settings > API
-   - Project URL      -> SUPABASE_URL
-   - anon public key  -> SUPABASE_ANON_KEY
 ======================================================= */
 const SUPABASE_URL = "https://bwgkcbxznwhplyxyjdky.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_8RjhbgG7Y-JCLZb93OmvKw_U_pUCxbh";
@@ -173,8 +284,10 @@ const DICT = {
     appTitle:"Pick Check 100", loginTitle:"เข้าสู่ระบบ", loginDesc:"กรอกเลขพนักงาน (เช่น TH061378)",
     loginBtn:"เข้าสู่ระบบ", tabScan:"สแกนเช็ค", tabStatus:"สถานะ", tabImport:"นำเข้าข้อมูล",
     btnStartScan:"เปิดกล้องสแกน Outbound Label", btnLookup:"ค้นหา", btnStopScan:"ปิดกล้อง",
-    btnFinalize:"ยืนยันเช็คครบ 100%", btnClose:"ปิด / สแกนใบถัดไป",
+    btnFinalize:"ยืนยันเช็คครบ 100%", btnClose:"ปิด / สแกนใบถัดไป", btnPrint:"พิมพ์ใบเช็ค",
     fAll:"ทั้งหมด", fPending:"ยังไม่เช็ค", fChecked:"เช็คแล้ว",
+    colProduct:"สินค้า", colCs:"Case", colLabel:"Outbound Label", colStore:"Store",
+    colProgress:"รายการ", colStatus:"สถานะ", colCheckedBy:"เช็คโดย", noData:"ไม่มีข้อมูล",
     importTitle:"นำเข้าข้อมูล WMS",
     importDesc:"อัปโหลดไฟล์ Excel/CSV ที่ export จาก WMS (ต้องมีคอลัมน์: Product, Product Name, Outbound label(TOTE), Customer, Instruction Tot Qty)",
     btnImport:"นำเข้าข้อมูล",
@@ -182,7 +295,7 @@ const DICT = {
     notFound:"ไม่พบ Outbound label นี้ในระบบ", alreadyChecked:"ใบนี้เช็คครบแล้ว",
     scanHint:"กำลังเปิดกล้อง...", finalizeConfirm:"ยืนยันว่าเช็คครบ 100% แล้ว?",
     doneToast:"เช็คครบ 100% แล้ว", importDone:"นำเข้าเสร็จแล้ว", importing:"กำลังนำเข้า...",
-    store:"Store", checkedBy:"เช็คโดย",
+    store:"Store", checkedBy:"เช็คโดย", pickerName:"Picker name", obName:"OB name",
     importProductTitle:"นำเข้า Product Master",
     importProductDesc:'อัปโหลดไฟล์จากชีต "Produc" (ต้องมีคอลัมน์: PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS) — ทำครั้งแรก แล้วอัปเดตใหม่เมื่อมีสินค้าเพิ่ม',
     btnImportProduct:"นำเข้า Product Master",
@@ -192,8 +305,10 @@ const DICT = {
     appTitle:"Pick Check 100", loginTitle:"Login", loginDesc:"Enter employee ID (e.g. TH061378)",
     loginBtn:"Login", tabScan:"Scan & Check", tabStatus:"Status", tabImport:"Import Data",
     btnStartScan:"Open camera - scan Outbound Label", btnLookup:"Search", btnStopScan:"Stop camera",
-    btnFinalize:"Confirm 100% Checked", btnClose:"Close / scan next",
+    btnFinalize:"Confirm 100% Checked", btnClose:"Close / scan next", btnPrint:"Print check sheet",
     fAll:"All", fPending:"Pending", fChecked:"Checked",
+    colProduct:"Product", colCs:"Case", colLabel:"Outbound Label", colStore:"Store",
+    colProgress:"Items", colStatus:"Status", colCheckedBy:"Checked by", noData:"No data",
     importTitle:"Import WMS Data",
     importDesc:"Upload the WMS export Excel/CSV (must have columns: Product, Product Name, Outbound label(TOTE), Customer, Instruction Tot Qty)",
     btnImport:"Import",
@@ -201,7 +316,7 @@ const DICT = {
     notFound:"Outbound label not found", alreadyChecked:"This label is already fully checked",
     scanHint:"Starting camera...", finalizeConfirm:"Confirm this label is fully checked (100%)?",
     doneToast:"Checked 100%", importDone:"Import complete", importing:"Importing...",
-    store:"Store", checkedBy:"Checked by",
+    store:"Store", checkedBy:"Checked by", pickerName:"Picker name", obName:"OB name",
     importProductTitle:"Import Product Master",
     importProductDesc:'Upload the "Produc" sheet export (must have columns: PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS) — do this once, re-upload when new products are added',
     btnImportProduct:"Import Product Master",
@@ -211,8 +326,10 @@ const DICT = {
     appTitle:"Pick Check 100", loginTitle:"ဝင်ရောက်ရန်", loginDesc:"ဝန်ထမ်းနံပါတ်ထည့်ပါ (ဥပမာ TH061378)",
     loginBtn:"ဝင်ရောက်မည်", tabScan:"စကင်ဖတ်စစ်ဆေးရန်", tabStatus:"အခြေအနေ", tabImport:"ဒေတာသွင်းရန်",
     btnStartScan:"ကင်မရာဖွင့်၍ Outbound Label ကိုစကင်ဖတ်ပါ", btnLookup:"ရှာဖွေရန်", btnStopScan:"ကင်မရာပိတ်ရန်",
-    btnFinalize:"100% စစ်ဆေးပြီးကြောင်းအတည်ပြုရန်", btnClose:"ပိတ် / နောက်တစ်ခုစကင်ဖတ်ရန်",
+    btnFinalize:"100% စစ်ဆေးပြီးကြောင်းအတည်ပြုရန်", btnClose:"ပိတ် / နောက်တစ်ခုစကင်ဖတ်ရန်", btnPrint:"ပရင့်ထုတ်ရန်",
     fAll:"အားလုံး", fPending:"မစစ်ဆေးရသေး", fChecked:"စစ်ဆေးပြီး",
+    colProduct:"ကုန်ပစ္စည်း", colCs:"Case", colLabel:"Outbound Label", colStore:"Store",
+    colProgress:"အရေအတွက်", colStatus:"အခြေအနေ", colCheckedBy:"စစ်ဆေးသူ", noData:"ဒေတာမရှိပါ",
     importTitle:"WMS ဒေတာသွင်းရန်",
     importDesc:"WMS ထုတ်ယူထားသော Excel/CSV ဖိုင်ကို တင်ပါ",
     btnImport:"ဒေတာသွင်းမည်",
@@ -220,7 +337,7 @@ const DICT = {
     notFound:"Outbound label ကို ရှာမတွေ့ပါ", alreadyChecked:"ဤလေဘယ်ကို 100% စစ်ဆေးပြီးပါပြီ",
     scanHint:"ကင်မရာဖွင့်နေသည်...", finalizeConfirm:"100% စစ်ဆေးပြီးကြောင်း အတည်ပြုမည်လား?",
     doneToast:"100% စစ်ဆေးပြီးပါပြီ", importDone:"ဒေတာသွင်းခြင်း ပြီးစီးပါပြီ", importing:"သွင်းနေသည်...",
-    store:"Store", checkedBy:"စစ်ဆေးသူ",
+    store:"Store", checkedBy:"စစ်ဆေးသူ", pickerName:"Picker name", obName:"OB name",
     importProductTitle:"Product Master သွင်းရန်",
     importProductDesc:'"Produc" ဖိုင်ကို တင်ပါ (PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS လိုအပ်သည်)',
     btnImportProduct:"Product Master သွင်းမည်",
@@ -295,10 +412,12 @@ document.querySelectorAll('nav .tab').forEach(btn=>{
 
 /* ====================== normalizeId ====================== */
 function normalizeId_(v){ return String(v==null?'':v).trim().toUpperCase().replace(/^'/, ''); }
+function esc_(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ====================== Scan & Check ====================== */
 let html5QrCode = null;
-let currentLabel = null; // {label_code, items:[...]}
+let currentLabel = null;
+let currentItems = [];
 
 document.getElementById('startScanBtn').addEventListener('click', startScan);
 document.getElementById('stopScanBtn').addEventListener('click', stopScan);
@@ -315,7 +434,7 @@ function startScan(){
   html5QrCode.start(
     { facingMode: "environment" }, config,
     (decodedText)=>{ stopScan(); lookupLabel(normalizeId_(decodedText)); },
-    ()=>{} // scan failure callback — ignore (fires continuously while searching)
+    ()=>{}
   ).catch(e=>{ toast('Camera error: '+e); });
 }
 function stopScan(){
@@ -333,7 +452,8 @@ async function lookupLabel(labelCode){
   const { data: items, error: e2 } = await sb.from('outbound_label_items').select('*').eq('label_code', labelCode).order('created_at');
   if(e2){ toast('Error: '+e2.message); return; }
   currentLabel = label;
-  renderLabelCard(label, items||[]);
+  currentItems = items||[];
+  renderLabelCard(label, currentItems);
 }
 
 function renderLabelCard(label, items){
@@ -348,21 +468,20 @@ function renderLabelCard(label, items){
   const list = document.getElementById('itemsList');
   list.innerHTML = '';
   items.forEach(it=>{
-    const row = document.createElement('div');
-    row.className = 'item-row';
+    const tr = document.createElement('tr');
     const csText = (it.qty_cs===null || it.qty_cs===undefined)
-      ? `<span style="color:var(--red);">${T('noMuCsWarn')}</span>`
-      : `${T('csLabel')} ${it.qty_cs}`;
-    row.innerHTML = `
-      <input type="checkbox" class="chk" data-id="${it.id}" ${it.checked ? 'checked':''}>
-      <div class="meta">
-        <div class="name">${it.product_name||''}</div>
-        <div class="code">${it.product_code} · ${T('muLabel')} ${it.instruction_qty}</div>
-      </div>
-      <div class="qty">${csText}</div>
+      ? `<span class="warn">${T('noMuCsWarn')}</span>`
+      : it.qty_cs;
+    tr.innerHTML = `
+      <td><input type="checkbox" class="chk" data-id="${it.id}" ${it.checked ? 'checked':''}></td>
+      <td>
+        <div>${esc_(it.product_name)}</div>
+        <div class="code">${esc_(it.product_code)} <span class="mu">· ${T('muLabel')} ${it.instruction_qty}</span></div>
+      </td>
+      <td class="cs">${csText}</td>
     `;
-    list.appendChild(row);
-    row.querySelector('.chk').addEventListener('change', async (ev)=>{
+    list.appendChild(tr);
+    tr.querySelector('.chk').addEventListener('change', async (ev)=>{
       const checked = ev.target.checked;
       await sb.from('outbound_label_items').update({
         checked, checked_qty: checked ? (it.qty_cs ?? it.instruction_qty) : null,
@@ -381,7 +500,7 @@ async function updateProgress(){
   const pct = total ? Math.round(done/total*100) : 0;
   document.getElementById('lblProgressBar').style.width = pct + '%';
   await sb.from('outbound_labels').update({
-    checked_items: done, status: done === 0 ? 'pending' : (done === total ? 'checking' : 'checking')
+    checked_items: done, status: done === 0 ? 'pending' : 'checking'
   }).eq('label_code', currentLabel.label_code);
 }
 
@@ -400,10 +519,60 @@ function closeLabelCard(){
   document.getElementById('scanStartCard').classList.remove('hidden');
   document.getElementById('manualCodeInput').value = '';
   currentLabel = null;
+  currentItems = [];
 }
 
-/* ====================== Status (Outbound) ====================== */
+/* ====================== Print (mirrors the paper "Outbound Checker" sheet) ====================== */
+document.getElementById('printBtn').addEventListener('click', ()=>{
+  if(!currentLabel){ return; }
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('th-TH') + ', ' + now.toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const rows = currentItems.map(it => `
+    <tr>
+      <td class="num">${esc_(it.qty_cs ?? '-')}</td>
+      <td>
+        <div>${esc_(it.product_name)}</div>
+        <div style="font-size:11px;color:#444;">${esc_(it.product_code)}</div>
+      </td>
+      <td class="chkbox"><span class="box"></span></td>
+      <td></td>
+    </tr>
+  `).join('');
+  document.getElementById('printSheet').innerHTML = `
+    <div class="ps-wrap">
+      <div class="ps-head">
+        <div>
+          <div class="ps-code">${esc_(currentLabel.label_code)}</div>
+          <div class="ps-store">${T('store')}: ${esc_(currentLabel.customer_store||'-')}</div>
+        </div>
+        <div class="ps-meta">${dateStr}</div>
+      </div>
+      <table class="ps-table">
+        <thead>
+          <tr>
+            <th style="width:70px;">${T('colCs')}</th>
+            <th>${T('colProduct')}</th>
+            <th style="width:46px;">✓</th>
+            <th style="width:120px;">Remark</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="ps-sign">
+        <div>${T('pickerName')}</div>
+        <div>${T('obName')}</div>
+      </div>
+    </div>
+  `;
+  window.print();
+});
+
+/* ====================== Status (Outbound) — data table ====================== */
 let statusFilter = 'all';
+let statusRows = [];
+let sortKey = 'imported_at';
+let sortDir = -1;
+
 document.querySelectorAll('.filterBtn').forEach(b=>{
   b.addEventListener('click', ()=>{
     document.querySelectorAll('.filterBtn').forEach(x=>x.classList.remove('active'));
@@ -412,27 +581,53 @@ document.querySelectorAll('.filterBtn').forEach(b=>{
     loadStatusList();
   });
 });
+document.querySelectorAll('#statusTable thead th[data-sort]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.sort;
+    sortDir = (sortKey === key) ? -sortDir : 1;
+    sortKey = key;
+    renderStatusTable();
+  });
+});
 
 async function loadStatusList(){
-  let q = sb.from('outbound_labels').select('*').order('imported_at', { ascending:false }).limit(200);
+  let q = sb.from('outbound_labels').select('*').order('imported_at', { ascending:false }).limit(300);
   if(statusFilter === 'pending') q = q.neq('status','checked');
   if(statusFilter === 'checked') q = q.eq('status','checked');
   const { data, error } = await q;
-  const list = document.getElementById('statusList');
-  if(error){ list.innerHTML = 'Error: '+error.message; return; }
-  list.innerHTML = '';
-  (data||[]).forEach(l=>{
-    const card = document.createElement('div');
-    card.className = 'card status-card';
-    card.innerHTML = `
-      <div>
-        <div class="label-code">${l.label_code}</div>
-        <div style="font-size:13px;color:var(--muted);">${T('store')}: ${l.customer_store||'-'} · ${l.checked_items}/${l.total_items}</div>
-        ${l.status==='checked' ? `<div style="font-size:12px;color:var(--muted);">${T('checkedBy')}: ${l.checked_by||'-'}</div>` : ''}
-      </div>
-      <span class="badge ${l.status}">${l.status}</span>
+  if(error){ toast('Error: '+error.message); return; }
+  statusRows = data || [];
+  renderStatusTable();
+}
+
+function renderStatusTable(){
+  const rows = [...statusRows].sort((a,b)=>{
+    const av = a[sortKey], bv = b[sortKey];
+    if(av == null) return 1;
+    if(bv == null) return -1;
+    return (av > bv ? 1 : av < bv ? -1 : 0) * sortDir;
+  });
+  const tbody = document.getElementById('statusList');
+  const empty = document.getElementById('statusEmpty');
+  tbody.innerHTML = '';
+  if(!rows.length){ empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  rows.forEach(l=>{
+    const pct = l.total_items ? Math.round((l.checked_items/l.total_items)*100) : 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="code">${esc_(l.label_code)}</td>
+      <td>${esc_(l.customer_store||'-')}</td>
+      <td>
+        <div class="progress-cell">
+          <span>${l.checked_items}/${l.total_items}</span>
+          <span class="mini"><div style="width:${pct}%"></div></span>
+        </div>
+      </td>
+      <td><span class="badge ${l.status}">${l.status}</span></td>
+      <td class="code">${esc_(l.checked_by||'-')}</td>
     `;
-    list.appendChild(card);
+    tbody.appendChild(tr);
   });
 }
 
@@ -518,7 +713,6 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-    // หา key คอลัมน์แบบยืดหยุ่น (ชื่อคอลัมน์จริงจาก WMS อาจมีช่องว่าง/ตัวพิมพ์ต่างกัน)
     function findKey(row, candidates){
       const keys = Object.keys(row);
       for(const c of candidates){
@@ -539,7 +733,6 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
       btn.disabled = false; return;
     }
 
-    // group by label
     const byLabel = {};
     rows.forEach(r=>{
       const labelCode = normalizeId_(r[kLabel]);
@@ -554,7 +747,6 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
 
     const labelCodes = Object.keys(byLabel);
 
-    // ดึง MU_CS จาก Product Master มาคำนวณ Qty CS = Instruction Qty (MU) / MU_CS
     const allProductCodes = [...new Set(rows.map(r => normalizeId_(r[kProduct])).filter(Boolean))];
     const muCsMap = {};
     for(const codes of chunk(allProductCodes, 300)){
@@ -569,7 +761,6 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
     let done = 0;
     for(const code of labelCodes){
       const g = byLabel[code];
-      // upsert label header
       await sb.from('outbound_labels').upsert({
         label_code: code,
         customer_store: g.customer,
@@ -579,7 +770,6 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
         imported_at: new Date().toISOString(),
         imported_batch: file.name
       }, { onConflict: 'label_code' });
-      // clear old items for this label then insert fresh (idempotent re-import)
       await sb.from('outbound_label_items').delete().eq('label_code', code);
       const rowsToInsert = g.items.map(it => {
         const muCs = muCsMap[it.product_code];

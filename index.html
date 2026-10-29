@@ -181,7 +181,6 @@
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
-    <span class="emp" id="empBadge"></span>
     <select id="langSel">
       <option value="th">TH</option>
       <option value="en">EN</option>
@@ -190,19 +189,8 @@
   </div>
 </header>
 
-<!-- LOGIN -->
-<main id="loginView">
-  <div class="card">
-    <h3 data-i18n="loginTitle">เข้าสู่ระบบ</h3>
-    <p data-i18n="loginDesc" style="color:var(--muted);font-size:13px;margin-top:2px;">กรอกเลขพนักงาน (เช่น TH061378)</p>
-    <input type="text" id="empInput" class="mono" placeholder="TH061378" maxlength="9" autocapitalize="characters" style="margin-top:10px;">
-    <button class="btn" id="loginBtn" data-i18n="loginBtn">เข้าสู่ระบบ</button>
-    <div id="loginErr" style="color:var(--red);font-size:13px;margin-top:8px;"></div>
-  </div>
-</main>
-
 <!-- APP -->
-<div id="appView" class="hidden">
+<div id="appView">
   <nav>
     <button class="tab active" data-tab="scan">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M3 17v2a2 2 0 0 0 2 2h2M21 7V5a2 2 0 0 0-2-2h-2M21 17v2a2 2 0 0 1-2 2h-2M7 12h10"/></svg>
@@ -295,7 +283,7 @@
               <th data-sort="customer_store" data-i18n="colStore">Store</th>
               <th data-sort="checked_items" data-i18n="colProgress">รายการ</th>
               <th data-sort="status" data-i18n="colStatus">สถานะ</th>
-              <th data-sort="checked_by" data-i18n="colCheckedBy">เช็คโดย</th>
+              <th data-sort="checked_at" data-i18n="colCheckedAt">เวลาเช็ค</th>
             </tr>
           </thead>
           <tbody id="statusList"></tbody>
@@ -345,10 +333,10 @@
         <div id="importLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
       </div>
 
-      <div class="card danger-card hidden" id="adminCard">
+      <div class="card danger-card" id="adminCard">
         <h3 data-i18n="adminTitle">ลบข้อมูล Outbound ทั้งหมด (Admin)</h3>
-        <p style="color:var(--muted);font-size:13px;margin-top:4px;" data-i18n="adminDesc">ลบใบ Outbound และรายการสินค้าที่ import จาก Lois ทั้งหมด (Product Master ไม่ถูกลบ)</p>
-        <input type="text" id="delWord" class="mono" data-i18n-ph="delTypeHint" placeholder="พิมพ์ DELETE" autocapitalize="characters" style="margin-top:8px;">
+        <p style="color:var(--muted);font-size:13px;margin-top:4px;" data-i18n="adminDesc">ลบใบ Outbound และรายการสินค้าที่ import จาก Lois ทั้งหมด (Product Master ไม่ถูกลบ) กรอกเลขพนักงาน Admin แล้วกดลบ</p>
+        <input type="text" id="delEmp" class="mono" data-i18n-ph="delTypeHint" placeholder="เลขพนักงาน Admin" autocapitalize="characters" maxlength="9" style="margin-top:8px;">
         <button class="btn red" id="deleteAllBtn" data-i18n="btnDeleteAll">ลบทั้งหมด</button>
         <div id="delLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
       </div>
@@ -369,8 +357,8 @@
 const SUPABASE_URL = "https://bwgkcbxznwhplyxyjdky.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_8RjhbgG7Y-JCLZb93OmvKw_U_pUCxbh";
 // ตัวแปลชื่อสินค้าเป็นพม่า: URL ของ GAS Web App (Translate.gs) ลงท้าย /exec — ยังไม่ deploy ให้เว้นว่าง
-const TRANSLATE_URL = "";
-// เลขพนักงานที่ลบข้อมูล Outbound ทั้งหมดได้ (ต้องตรงกับใน update_v2.sql)
+const TRANSLATE_URL = "https://script.google.com/macros/s/AKfycbydlniiYmljv9oNzobJnwGr2StPIPjndUhCnwxSyrU_W8SzaG3u9JnxqG3xBHv6FemA/exec";
+// เลขพนักงาน Admin ที่ลบข้อมูล Outbound ทั้งหมดได้ (กรอกตอนลบ — ต้องตรงกับใน update_v2.sql)
 const ADMIN_EMPS = ['TH061378'];
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -378,8 +366,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /* ====================== i18n ====================== */
 const DICT = {
   th: {
-    appTitle:"Pick Check 100", loginTitle:"เข้าสู่ระบบ", loginDesc:"กรอกเลขพนักงาน (เช่น TH061378)",
-    loginBtn:"เข้าสู่ระบบ", tabScan:"สแกนเช็ค", tabStatus:"สถานะ", tabImport:"นำเข้าข้อมูล",
+    appTitle:"Pick Check 100", tabScan:"สแกนเช็ค", tabStatus:"สถานะ", tabImport:"นำเข้าข้อมูล",
     btnStartScan:"เปิดกล้องสแกน Outbound Label", btnLookup:"ค้นหา", btnStopScan:"ปิดกล้อง",
     btnFinalize:"ยืนยันเช็คครบ 100%", btnClose:"ปิด / สแกนใบถัดไป", btnPrint:"พิมพ์ใบเช็ค",
     fAll:"ทั้งหมด", fPending:"ยังไม่เช็ค", fChecked:"ครบแล้ว",
@@ -388,7 +375,6 @@ const DICT = {
     importTitle:"นำเข้าข้อมูล WMS",
     importDesc:"อัปโหลดไฟล์ Excel/CSV ที่ export จาก WMS (ต้องมีคอลัมน์: Product, Product Name, Outbound label(TOTE), Customer, Instruction Tot Qty)",
     btnImport:"นำเข้าข้อมูล",
-    errBadEmp:"เลขพนักงานไม่ถูกต้อง (ต้องเป็น TH ตามด้วยเลข 6 หลัก)",
     notFound:"ไม่พบ Outbound label นี้ในระบบ", alreadyChecked:"ใบนี้เช็คครบแล้ว",
     scanHint:"กำลังเปิดกล้อง...", finalizeConfirm:"ยืนยันว่าเช็คครบ 100% แล้ว?",
     doneToast:"เช็คครบ 100% แล้ว", importDone:"นำเข้าเสร็จแล้ว", importing:"กำลังนำเข้า...",
@@ -410,13 +396,12 @@ const DICT = {
     phProductNameMy:"ชื่อสินค้า (พม่า) — เว้นว่างไว้ ระบบแปลให้", trNoUrl:"ยังไม่ได้ตั้งค่าตัวแปลภาษา (GAS)",
     trDone:"แปลชื่อพม่าแล้ว", trFail:"แปลชื่อพม่าไม่สำเร็จ", btnTranslateMissing:"แปลชื่อพม่าที่ยังขาด (ครั้งละ 200)",
     trRemain:"ยังไม่มีชื่อพม่าอีก", trNone:"สินค้าทุกตัวมีชื่อพม่าแล้ว", trRunning:"กำลังแปล...",
-    adminTitle:"ลบข้อมูล Outbound ทั้งหมด (Admin)", adminDesc:"ลบใบ Outbound และรายการสินค้าที่ import จาก Lois ทั้งหมด (Product Master ไม่ถูกลบ) พิมพ์คำว่า DELETE แล้วกดลบ",
-    btnDeleteAll:"ลบทั้งหมด", delTypeHint:"พิมพ์ DELETE", delNeedWord:"ต้องพิมพ์คำว่า DELETE ให้ถูกต้อง",
-    delConfirm:"ยืนยันลบข้อมูล Outbound ทั้งหมด? ย้อนกลับไม่ได้", delDone:"ลบข้อมูลแล้ว", delDenied:"เฉพาะ Admin เท่านั้น", printLayout:"รูปแบบใบพิมพ์", orientLand:"แนวนอน", orientPort:"แนวตั้ง"
+    adminTitle:"ลบข้อมูล Outbound ทั้งหมด (Admin)", adminDesc:"ลบใบ Outbound และรายการสินค้าที่ import จาก Lois ทั้งหมด (Product Master ไม่ถูกลบ) กรอกเลขพนักงาน Admin แล้วกดลบ",
+    btnDeleteAll:"ลบทั้งหมด", delTypeHint:"เลขพนักงาน Admin", delNeedWord:"กรอกเลขพนักงาน Admin ก่อน",
+    delConfirm:"ยืนยันลบข้อมูล Outbound ทั้งหมด? ย้อนกลับไม่ได้", delDone:"ลบข้อมูลแล้ว", delDenied:"เลขพนักงานนี้ไม่มีสิทธิ์ลบ", colCheckedAt:"เวลาเช็ค", printLayout:"รูปแบบใบพิมพ์", orientLand:"แนวนอน", orientPort:"แนวตั้ง"
   },
   en: {
-    appTitle:"Pick Check 100", loginTitle:"Login", loginDesc:"Enter employee ID (e.g. TH061378)",
-    loginBtn:"Login", tabScan:"Scan & Check", tabStatus:"Status", tabImport:"Import Data",
+    appTitle:"Pick Check 100", tabScan:"Scan & Check", tabStatus:"Status", tabImport:"Import Data",
     btnStartScan:"Open camera - scan Outbound Label", btnLookup:"Search", btnStopScan:"Stop camera",
     btnFinalize:"Confirm 100% Checked", btnClose:"Close / scan next", btnPrint:"Print check sheet",
     fAll:"All", fPending:"Pending", fChecked:"Complete",
@@ -425,7 +410,6 @@ const DICT = {
     importTitle:"Import WMS Data",
     importDesc:"Upload the WMS export Excel/CSV (must have columns: Product, Product Name, Outbound label(TOTE), Customer, Instruction Tot Qty)",
     btnImport:"Import",
-    errBadEmp:"Invalid employee ID (must be TH followed by 6 digits)",
     notFound:"Outbound label not found", alreadyChecked:"This label is already fully checked",
     scanHint:"Starting camera...", finalizeConfirm:"Confirm this label is fully checked (100%)?",
     doneToast:"Checked 100%", importDone:"Import complete", importing:"Importing...",
@@ -447,13 +431,12 @@ const DICT = {
     phProductNameMy:"Product name (Burmese) — leave blank to auto-translate", trNoUrl:"Translator (GAS) not set up yet",
     trDone:"Burmese name translated", trFail:"Burmese translation failed", btnTranslateMissing:"Translate missing Burmese names (200 per run)",
     trRemain:"Still without Burmese name", trNone:"All products have Burmese names", trRunning:"Translating...",
-    adminTitle:"Delete all Outbound data (Admin)", adminDesc:"Deletes all Outbound labels and items imported from Lois (Product Master is kept). Type DELETE, then press delete",
-    btnDeleteAll:"Delete all", delTypeHint:"Type DELETE", delNeedWord:"Type the word DELETE exactly",
-    delConfirm:"Delete ALL Outbound data? This cannot be undone", delDone:"Data deleted", delDenied:"Admin only", printLayout:"Print layout", orientLand:"Landscape", orientPort:"Portrait"
+    adminTitle:"Delete all Outbound data (Admin)", adminDesc:"Deletes all Outbound labels and items imported from Lois (Product Master is kept). Enter the admin employee ID, then press delete",
+    btnDeleteAll:"Delete all", delTypeHint:"Admin employee ID", delNeedWord:"Enter the admin employee ID first",
+    delConfirm:"Delete ALL Outbound data? This cannot be undone", delDone:"Data deleted", delDenied:"This employee ID is not allowed to delete", colCheckedAt:"Checked at", printLayout:"Print layout", orientLand:"Landscape", orientPort:"Portrait"
   },
   my: {
-    appTitle:"Pick Check 100", loginTitle:"ဝင်ရောက်ရန်", loginDesc:"ဝန်ထမ်းနံပါတ်ထည့်ပါ (ဥပမာ TH061378)",
-    loginBtn:"ဝင်ရောက်မည်", tabScan:"စကင်ဖတ်စစ်ဆေးရန်", tabStatus:"အခြေအနေ", tabImport:"ဒေတာသွင်းရန်",
+    appTitle:"Pick Check 100", tabScan:"စကင်ဖတ်စစ်ဆေးရန်", tabStatus:"အခြေအနေ", tabImport:"ဒေတာသွင်းရန်",
     btnStartScan:"ကင်မရာဖွင့်၍ Outbound Label ကိုစကင်ဖတ်ပါ", btnLookup:"ရှာဖွေရန်", btnStopScan:"ကင်မရာပိတ်ရန်",
     btnFinalize:"100% စစ်ဆေးပြီးကြောင်းအတည်ပြုရန်", btnClose:"ပိတ် / နောက်တစ်ခုစကင်ဖတ်ရန်", btnPrint:"ပရင့်ထုတ်ရန်",
     fAll:"အားလုံး", fPending:"မစစ်ဆေးရသေး", fChecked:"စစ်ဆေးပြီး",
@@ -462,7 +445,6 @@ const DICT = {
     importTitle:"WMS ဒေတာသွင်းရန်",
     importDesc:"WMS ထုတ်ယူထားသော Excel/CSV ဖိုင်ကို တင်ပါ",
     btnImport:"ဒေတာသွင်းမည်",
-    errBadEmp:"ဝန်ထမ်းနံပါတ် မှားယွင်းနေပါသည်",
     notFound:"Outbound label ကို ရှာမတွေ့ပါ", alreadyChecked:"ဤလေဘယ်ကို 100% စစ်ဆေးပြီးပါပြီ",
     scanHint:"ကင်မရာဖွင့်နေသည်...", finalizeConfirm:"100% စစ်ဆေးပြီးကြောင်း အတည်ပြုမည်လား?",
     doneToast:"100% စစ်ဆေးပြီးပါပြီ", importDone:"ဒေတာသွင်းခြင်း ပြီးစီးပါပြီ", importing:"သွင်းနေသည်...",
@@ -484,9 +466,9 @@ const DICT = {
     phProductNameMy:"ပစ္စည်းအမည် (မြန်မာ) — ကွက်လပ်ထားလျှင် အလိုအလျောက် ဘာသာပြန်မည်", trNoUrl:"ဘာသာပြန် (GAS) မသတ်မှတ်ရသေးပါ",
     trDone:"မြန်မာအမည် ဘာသာပြန်ပြီး", trFail:"ဘာသာပြန်မရပါ", btnTranslateMissing:"မရှိသေးသော မြန်မာအမည် ဘာသာပြန်ရန် (တစ်ကြိမ် 200)",
     trRemain:"မြန်မာအမည် မရှိသေး", trNone:"ပစ္စည်းအားလုံး မြန်မာအမည် ရှိပြီး", trRunning:"ဘာသာပြန်နေသည်...",
-    adminTitle:"Outbound ဒေတာအားလုံး ဖျက်ရန် (Admin)", adminDesc:"Lois မှ သွင်းထားသော Outbound ဒေတာအားလုံး ဖျက်မည် (Product Master မဖျက်ပါ) DELETE ဟု ရိုက်ပြီး ဖျက်ပါ",
-    btnDeleteAll:"အားလုံးဖျက်ရန်", delTypeHint:"DELETE ဟု ရိုက်ပါ", delNeedWord:"DELETE ဟု မှန်ကန်စွာ ရိုက်ပါ",
-    delConfirm:"Outbound ဒေတာအားလုံး ဖျက်မည်လား? ပြန်ယူ၍မရပါ", delDone:"ဖျက်ပြီးပါပြီ", delDenied:"Admin သာ", printLayout:"ပရင့်ပုံစံ", orientLand:"အလျားလိုက်", orientPort:"ဒေါင်လိုက်"
+    adminTitle:"Outbound ဒေတာအားလုံး ဖျက်ရန် (Admin)", adminDesc:"Lois မှ သွင်းထားသော Outbound ဒေတာအားလုံး ဖျက်မည် (Product Master မဖျက်ပါ) Admin ဝန်ထမ်းနံပါတ် ထည့်ပြီး ဖျက်ပါ",
+    btnDeleteAll:"အားလုံးဖျက်ရန်", delTypeHint:"Admin ဝန်ထမ်းနံပါတ်", delNeedWord:"Admin ဝန်ထမ်းနံပါတ် အရင်ထည့်ပါ",
+    delConfirm:"Outbound ဒေတာအားလုံး ဖျက်မည်လား? ပြန်ယူ၍မရပါ", delDone:"ဖျက်ပြီးပါပြီ", delDenied:"ဤဝန်ထမ်းနံပါတ်ဖြင့် ဖျက်ခွင့်မရှိပါ", colCheckedAt:"စစ်ဆေးချိန်", printLayout:"ပရင့်ပုံစံ", orientLand:"အလျားလိုက်", orientPort:"ဒေါင်လိုက်"
   }
 };
 let LANG = localStorage.getItem('pc100_lang') || 'th';
@@ -522,31 +504,6 @@ function showModal(message, onConfirm){
   bg.querySelector('#mCancel').onclick = ()=>bg.remove();
   bg.querySelector('#mOk').onclick = ()=>{ bg.remove(); onConfirm(); };
 }
-
-/* ====================== Login ====================== */
-const EMP_RE = /^TH\d{6}$/i;
-let currentEmp = localStorage.getItem('pc100_emp') || '';
-
-function showLogin(){
-  document.getElementById('loginView').classList.remove('hidden');
-  document.getElementById('appView').classList.add('hidden');
-}
-function showApp(){
-  document.getElementById('loginView').classList.add('hidden');
-  document.getElementById('appView').classList.remove('hidden');
-  document.getElementById('empBadge').textContent = currentEmp;
-  document.getElementById('adminCard').classList.toggle('hidden', !ADMIN_EMPS.includes(currentEmp));
-}
-document.getElementById('loginBtn').addEventListener('click', ()=>{
-  const v = document.getElementById('empInput').value.trim().toUpperCase();
-  const err = document.getElementById('loginErr');
-  if(!EMP_RE.test(v)){ err.textContent = T('errBadEmp'); return; }
-  err.textContent = '';
-  currentEmp = v;
-  localStorage.setItem('pc100_emp', v);
-  showApp();
-  loadStatusList();
-});
 
 /* ====================== Tabs ====================== */
 document.querySelectorAll('nav .tab').forEach(btn=>{
@@ -817,7 +774,7 @@ document.getElementById('saveResultBtn').addEventListener('click', async ()=>{
   if(okIds.length + shortIds.length !== currentItems.length){ toast(T('needAll')); return; }
   btn.disabled = true;
   try{
-    const base = { checked_by: currentEmp, checked_at: new Date().toISOString() };
+    const base = { checked_at: new Date().toISOString() };
     for(const ids of chunk(okIds, 200)){
       const { error } = await sb.from('outbound_label_items').update({ ...base, result: 'ok', checked: true }).in('id', ids);
       if(error) throw error;
@@ -984,7 +941,7 @@ function renderStatusTable(){
         </div>
       </td>
       <td><span class="badge ${esc_(l.status)}">${esc_(statusText(l.status))}</span></td>
-      <td class="code">${esc_(l.checked_by||'-')}</td>
+      <td class="code">${l.checked_at ? esc_(new Date(l.checked_at).toLocaleString('en-GB',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})) : '-'}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -1126,15 +1083,16 @@ document.getElementById('trMissingBtn').addEventListener('click', async ()=>{
 
 document.getElementById('deleteAllBtn').addEventListener('click', ()=>{
   const log = document.getElementById('delLog');
-  if(!ADMIN_EMPS.includes(currentEmp)){ log.textContent = T('delDenied'); return; }
-  if(document.getElementById('delWord').value.trim().toUpperCase() !== 'DELETE'){ log.textContent = T('delNeedWord'); return; }
+  const emp = normalizeId_(document.getElementById('delEmp').value);
+  if(!emp){ log.textContent = T('delNeedWord'); return; }
+  if(!ADMIN_EMPS.includes(emp)){ log.textContent = T('delDenied'); return; }
   showModal(T('delConfirm'), async ()=>{
     const btn = document.getElementById('deleteAllBtn');
     btn.disabled = true;
-    const { data, error } = await sb.rpc('admin_clear_outbound', { p_emp: currentEmp });
+    const { data, error } = await sb.rpc('admin_clear_outbound', { p_emp: emp });
     btn.disabled = false;
     if(error){ log.textContent = 'Error: ' + error.message; return; }
-    document.getElementById('delWord').value = '';
+    document.getElementById('delEmp').value = '';
     log.textContent = `${T('delDone')}: ${data || 0} Outbound label`;
     toast(T('delDone'));
     closeLabelCard();
@@ -1318,7 +1276,7 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
 
 /* ====================== Init ====================== */
 applyI18n();
-if(EMP_RE.test(currentEmp)){ showApp(); loadStatusList(); } else { showLogin(); }
+loadStatusList();
 </script>
 </body>
 </html>

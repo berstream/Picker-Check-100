@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <style>
   :root{
     --blue:#2f6fed; --blue-d:#1f54c2; --blue-bg:#eaf0fe;
@@ -79,6 +80,36 @@
   .badge.checking{background:var(--blue-bg);color:var(--blue-d);}
   .badge.checking::before{animation:pulse 1.4s ease-in-out infinite;}
   .badge.checked{background:var(--green-bg);color:var(--green);}
+  .badge.returned{background:var(--red-bg);color:var(--red);}
+  /* check flow */
+  .item-table th.res{text-align:center;width:120px;}
+  .allchk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);font-size:12px;white-space:nowrap;}
+  .allchk input{width:20px;height:20px;accent-color:var(--green);}
+  .item-table .nm-th{font-weight:600;margin-top:2px;}
+  .item-table .nm-sub{font-size:12.5px;color:var(--muted);margin-top:1px;}
+  .item-table .nm-my{font-family:'Noto Sans Myanmar',var(--sans);}
+  .item-table tr.dup td:first-child{box-shadow:inset 4px 0 0 var(--amber);}
+  .item-table tr.ok td{background:var(--green-bg);}
+  .item-table tr.short td{background:var(--red-bg);}
+  .tag{display:inline-block;font-family:var(--sans);font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:999px;margin-left:6px;vertical-align:1px;}
+  .tag.dup{background:var(--amber-bg);color:#b67700;}
+  .tag.prev{background:var(--red-bg);color:var(--red);}
+  .resbtns{display:flex;gap:6px;justify-content:center;}
+  .resbtn{width:48px;height:42px;border-radius:10px;border:1.5px solid var(--border-2);background:#fff;font-size:19px;font-weight:700;cursor:pointer;color:var(--muted);font-family:var(--sans);}
+  .resbtn.ok.on{background:var(--green);border-color:var(--green);color:#fff;}
+  .resbtn.short.on{background:var(--red);border-color:var(--red);color:#fff;}
+  .check-summary{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;margin-top:10px;color:var(--muted);}
+  .check-summary b{color:var(--text);font-size:15px;}
+  .check-summary .s-ok b{color:var(--green);}
+  .check-summary .s-short b{color:var(--red);}
+  .short-note{color:var(--red);font-size:11.5px;font-weight:600;margin-left:6px;}
+  .label-photo{width:110px;height:56px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--border);display:block;margin-top:8px;margin-left:auto;}
+  .orient-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:14px;font-size:13px;color:var(--muted);}
+  .orient-row select{padding:7px 10px;border:1.5px solid var(--border-2);border-radius:10px;font-family:inherit;font-size:13px;background:#fff;color:var(--text);}
+  .danger-card{border-color:#f5c2c4;}
+  .danger-card h3{color:var(--red);}
+  button.btn.red{background:var(--red);}
+  button.btn.red:hover{background:#c93338;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
   #reader{width:100%;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);}
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:11px 20px;border-radius:999px;font-size:14px;z-index:50;max-width:90%;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.2);}
@@ -113,24 +144,30 @@
   /* ===== Print sheet (mirrors paper "Outbound Checker") ===== */
   #printSheet{display:none;}
   @media print{
-    body *{visibility:hidden;}
-    #printSheet, #printSheet *{visibility:visible;}
-    #printSheet{display:block;position:absolute;top:0;left:0;width:100%;}
-    @page{margin:12mm;}
+    body > *:not(#printSheet){display:none !important;}
+    #printSheet{display:block;width:100%;}
+    html,body{background:#fff !important;}
   }
-  .ps-wrap{font-family:'Sarabun','TH Sarabun New',sans-serif;color:#000;padding:4px;}
-  .ps-head{display:flex;justify-content:space-between;align-items:flex-start;border:2px solid #000;padding:10px 14px;margin-bottom:0;}
-  .ps-code{font-size:26px;font-weight:700;font-family:var(--mono);}
-  .ps-store{font-size:20px;font-weight:700;margin-top:2px;}
-  .ps-meta{text-align:right;font-size:13px;}
-  table.ps-table{width:100%;border-collapse:collapse;margin-top:0;}
-  table.ps-table th,table.ps-table td{border:1px solid #000;padding:6px 8px;font-size:14px;}
-  table.ps-table th{background:#e9edf3;text-transform:none;text-align:center;font-weight:700;}
-  table.ps-table td.num{text-align:center;font-weight:700;font-size:17px;}
-  table.ps-table td.chkbox{text-align:center;width:46px;}
-  table.ps-table td.chkbox .box{width:20px;height:20px;border:1.5px solid #000;display:inline-block;}
-  .ps-sign{display:flex;justify-content:space-between;margin-top:26px;padding:0 10px;}
-  .ps-sign div{width:46%;border-top:1px solid #000;padding-top:4px;font-size:13px;text-align:center;}
+  .ps-wrap{font-family:'TH Sarabun New','Sarabun','Noto Sans Myanmar',sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .ps-head{display:grid;grid-template-columns:40% 1fr 190px;border:2px solid #000;align-items:stretch;}
+  .ps-id{border-right:2px solid #000;text-align:center;}
+  .ps-code{font-family:var(--mono);font-size:22px;font-weight:700;padding:4px 6px;background:#eee;border-bottom:1px solid #000;}
+  .ps-store{font-size:24px;font-weight:700;padding:2px 6px;}
+  .ps-meta{display:flex;align-items:flex-end;justify-content:center;font-size:16px;font-weight:700;padding:6px;}
+  .ps-photo{border-left:2px solid #000;display:flex;align-items:center;justify-content:center;padding:4px;}
+  .ps-photo img{max-width:180px;max-height:96px;display:block;}
+  .ps-photo svg{width:84px;height:84px;display:block;}
+  table.ps-table{width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed;}
+  table.ps-table th{background:#2f5f4f;color:#fff;font-size:15px;font-weight:700;padding:5px 4px;border:1px solid #000;text-align:center;}
+  table.ps-table td{border:1px solid #000;padding:3px 6px;font-size:14px;vertical-align:middle;word-wrap:break-word;}
+  table.ps-table td.c{text-align:center;}
+  table.ps-table td.num{text-align:center;font-weight:700;font-size:16px;}
+  table.ps-table tr.dup td{background:#f4cccc;}
+  table.ps-table tr.total td{background:#d9d9d9;font-weight:700;font-size:17px;text-align:center;}
+  table.ps-table .box{width:18px;height:18px;border:1.5px solid #000;display:inline-block;}
+  .ps-my{font-family:'Noto Sans Myanmar',sans-serif;font-size:11px;color:#333;}
+  .ps-sign{display:flex;justify-content:space-between;margin-top:34px;font-size:15px;font-weight:700;}
+  .ps-sign span{display:inline-block;width:200px;border-bottom:1px solid #000;margin-left:8px;}
 </style>
 </head>
 <body>
@@ -210,22 +247,33 @@
             <div class="label-code" id="lblCode"></div>
             <div class="label-sub" id="lblStore"></div>
           </div>
-          <span class="badge" id="lblBadge"></span>
+          <div style="text-align:right;">
+            <span class="badge" id="lblBadge"></span>
+            <img id="lblPhoto" class="label-photo hidden" alt="">
+          </div>
         </div>
         <div class="progressbar"><div id="lblProgressBar" style="width:0%"></div></div>
         <table class="item-table" id="itemsTable">
           <thead>
             <tr>
-              <th style="width:30px;"></th>
               <th data-i18n="colProduct">สินค้า</th>
-              <th style="text-align:center;" data-i18n="colCs">Case</th>
+              <th style="text-align:center;width:70px;" data-i18n="colCs">Case</th>
+              <th class="res"><label class="allchk"><input type="checkbox" id="chkAll"><span data-i18n="chkAll">ครบทั้งหมด</span></label></th>
             </tr>
           </thead>
           <tbody id="itemsList"></tbody>
         </table>
-        <div class="row" style="margin-top:14px;">
+        <div class="check-summary" id="checkSummary"></div>
+        <div class="orient-row">
+          <span data-i18n="printLayout">รูปแบบใบพิมพ์</span>
+          <select id="printOrient">
+            <option value="landscape" data-i18n="orientLand">แนวนอน</option>
+            <option value="portrait" data-i18n="orientPort">แนวตั้ง</option>
+          </select>
+        </div>
+        <div class="row" style="margin-top:8px;">
           <button class="btn outline" id="printBtn" data-i18n="btnPrint">พิมพ์ใบเช็ค</button>
-          <button class="btn green" id="finalizeBtn" data-i18n="btnFinalize">ยืนยันเช็คครบ 100%</button>
+          <button class="btn green" id="saveResultBtn" data-i18n="btnSaveResult">บันทึกผลเช็ค</button>
         </div>
         <button class="btn secondary" id="closeLabelBtn" style="margin-top:8px;" data-i18n="btnClose">ปิด / สแกนใบถัดไป</button>
       </div>
@@ -236,7 +284,8 @@
       <div class="filter-chips">
         <button class="btn secondary filterBtn active" data-f="all" data-i18n="fAll">ทั้งหมด</button>
         <button class="btn secondary filterBtn" data-f="pending" data-i18n="fPending">ยังไม่เช็ค</button>
-        <button class="btn secondary filterBtn" data-f="checked" data-i18n="fChecked">เช็คแล้ว</button>
+        <button class="btn secondary filterBtn" data-f="checked" data-i18n="fChecked">ครบแล้ว</button>
+        <button class="btn secondary filterBtn" data-f="returned" data-i18n="fReturned">ส่งกลับ Picking</button>
       </div>
       <div class="table-wrap">
         <table class="dt" id="statusTable">
@@ -278,9 +327,12 @@
         </div>
         <input type="text" id="pmNameTh" data-i18n-ph="phProductNameTh" placeholder="ชื่อสินค้า (ไทย)" style="margin-top:8px;">
         <input type="text" id="pmNameEn" data-i18n-ph="phProductNameEn" placeholder="ชื่อสินค้า (Eng)" style="margin-top:8px;">
+        <input type="text" id="pmNameMy" class="nm-my" data-i18n-ph="phProductNameMy" placeholder="ชื่อสินค้า (พม่า)" style="margin-top:8px;font-family:'Noto Sans Myanmar',var(--sans);">
         <input type="number" step="any" id="pmMuCs" data-i18n-ph="phMuCs" placeholder="MU_CS" style="margin-top:8px;">
         <button class="btn" id="pmSaveBtn" data-i18n="btnSaveProduct" style="margin-top:8px;">บันทึก</button>
         <div id="pmLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
+        <button class="btn outline" id="trMissingBtn" data-i18n="btnTranslateMissing" style="margin-top:12px;">แปลชื่อพม่าที่ยังขาด</button>
+        <div id="trLog" style="margin-top:8px;font-size:13px;white-space:pre-wrap;"></div>
       </div>
 
       <div class="card">
@@ -292,6 +344,14 @@
         <button class="btn" id="importBtn" data-i18n="btnImport">นำเข้าข้อมูล</button>
         <div id="importLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
       </div>
+
+      <div class="card danger-card hidden" id="adminCard">
+        <h3 data-i18n="adminTitle">ลบข้อมูล Outbound ทั้งหมด (Admin)</h3>
+        <p style="color:var(--muted);font-size:13px;margin-top:4px;" data-i18n="adminDesc">ลบใบ Outbound และรายการสินค้าที่ import จาก Lois ทั้งหมด (Product Master ไม่ถูกลบ)</p>
+        <input type="text" id="delWord" class="mono" data-i18n-ph="delTypeHint" placeholder="พิมพ์ DELETE" autocapitalize="characters" style="margin-top:8px;">
+        <button class="btn red" id="deleteAllBtn" data-i18n="btnDeleteAll">ลบทั้งหมด</button>
+        <div id="delLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
+      </div>
     </section>
   </main>
 </div>
@@ -300,6 +360,7 @@
 
 <!-- PRINT-ONLY SHEET (built dynamically, mirrors the paper "Outbound Checker" form) -->
 <div id="printSheet"></div>
+<style id="pageStyle">@page{size:A4 landscape;margin:10mm;}</style>
 
 <script>
 /* ====================== CONFIG ======================
@@ -307,6 +368,10 @@
 ======================================================= */
 const SUPABASE_URL = "https://bwgkcbxznwhplyxyjdky.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_8RjhbgG7Y-JCLZb93OmvKw_U_pUCxbh";
+// ตัวแปลชื่อสินค้าเป็นพม่า: URL ของ GAS Web App (Translate.gs) ลงท้าย /exec — ยังไม่ deploy ให้เว้นว่าง
+const TRANSLATE_URL = "";
+// เลขพนักงานที่ลบข้อมูล Outbound ทั้งหมดได้ (ต้องตรงกับใน update_v2.sql)
+const ADMIN_EMPS = ['TH061378'];
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -317,7 +382,7 @@ const DICT = {
     loginBtn:"เข้าสู่ระบบ", tabScan:"สแกนเช็ค", tabStatus:"สถานะ", tabImport:"นำเข้าข้อมูล",
     btnStartScan:"เปิดกล้องสแกน Outbound Label", btnLookup:"ค้นหา", btnStopScan:"ปิดกล้อง",
     btnFinalize:"ยืนยันเช็คครบ 100%", btnClose:"ปิด / สแกนใบถัดไป", btnPrint:"พิมพ์ใบเช็ค",
-    fAll:"ทั้งหมด", fPending:"ยังไม่เช็ค", fChecked:"เช็คแล้ว",
+    fAll:"ทั้งหมด", fPending:"ยังไม่เช็ค", fChecked:"ครบแล้ว",
     colProduct:"สินค้า", colCs:"Case", colLabel:"Outbound Label", colStore:"Store",
     colProgress:"รายการ", colStatus:"สถานะ", colCheckedBy:"เช็คโดย", noData:"ไม่มีข้อมูล",
     importTitle:"นำเข้าข้อมูล WMS",
@@ -336,14 +401,25 @@ const DICT = {
     phProductCode:"รหัสสินค้า (PRODUCT_CD)", phProductNameTh:"ชื่อสินค้า (ไทย)", phProductNameEn:"ชื่อสินค้า (Eng)", phMuCs:"MU_CS (จำนวน MU ต่อ 1 Case)",
     btnSaveProduct:"บันทึก", pmFound:"พบสินค้าเดิม — แก้ไขแล้วกดบันทึก", pmNew:"ไม่พบรหัสนี้ — กรอกข้อมูลแล้วกดบันทึกเพื่อเพิ่มใหม่",
     pmNeedCode:"กรุณาใส่รหัสสินค้า", pmBadMuCs:"MU_CS ต้องเป็นตัวเลขมากกว่า 0", pmSaved:"บันทึกสินค้าแล้ว", pmRecalc:"อัปเดตจำนวน Case ในใบที่ยังไม่เช็ค",
-    btnUploadImg:"อัปโหลดรูป QR", dropHint:"กดเลือกรูป / ลากรูปมาวาง / Ctrl+V วางรูป", qrReading:"กำลังอ่าน QR จากรูป...", qrReadFail:"อ่าน QR จากรูปไม่ออก — ดูเลขบนใบแล้วพิมพ์ในช่องค้นหา"
+    btnUploadImg:"อัปโหลดรูป QR", dropHint:"กดเลือกรูป / ลากรูปมาวาง / Ctrl+V วางรูป", qrReading:"กำลังอ่าน QR จากรูป...", qrReadFail:"อ่าน QR จากรูปไม่ออก — ดูเลขบนใบแล้วพิมพ์ในช่องค้นหา",
+    btnSaveResult:"บันทึกผลเช็ค", chkAll:"ครบทั้งหมด", resOk:"ครบ", resShort:"ไม่ครบ",
+    sumOk:"ครบ", sumShort:"ไม่ครบ", sumTodo:"ยังไม่เช็ค", totalItems:"รายการ", totalCs:"รวม Case",
+    needAll:"เช็คให้ครบทุกรายการก่อนบันทึก", savedOk:"ครบทุกรายการ — ส่ง Outbound ได้", savedReturn:"ไม่ครบ {n} รายการ — ส่งกลับ Picking",
+    stPending:"รอเช็ค", stChecking:"กำลังเช็ค", stChecked:"ครบ – ส่ง Outbound", stReturned:"ส่งกลับ Picking",
+    fReturned:"ส่งกลับ Picking", dupTag:"ซ้ำ", prevShort:"เคยไม่ครบ", shortNote:"ไม่ครบ",
+    phProductNameMy:"ชื่อสินค้า (พม่า) — เว้นว่างไว้ ระบบแปลให้", trNoUrl:"ยังไม่ได้ตั้งค่าตัวแปลภาษา (GAS)",
+    trDone:"แปลชื่อพม่าแล้ว", trFail:"แปลชื่อพม่าไม่สำเร็จ", btnTranslateMissing:"แปลชื่อพม่าที่ยังขาด (ครั้งละ 200)",
+    trRemain:"ยังไม่มีชื่อพม่าอีก", trNone:"สินค้าทุกตัวมีชื่อพม่าแล้ว", trRunning:"กำลังแปล...",
+    adminTitle:"ลบข้อมูล Outbound ทั้งหมด (Admin)", adminDesc:"ลบใบ Outbound และรายการสินค้าที่ import จาก Lois ทั้งหมด (Product Master ไม่ถูกลบ) พิมพ์คำว่า DELETE แล้วกดลบ",
+    btnDeleteAll:"ลบทั้งหมด", delTypeHint:"พิมพ์ DELETE", delNeedWord:"ต้องพิมพ์คำว่า DELETE ให้ถูกต้อง",
+    delConfirm:"ยืนยันลบข้อมูล Outbound ทั้งหมด? ย้อนกลับไม่ได้", delDone:"ลบข้อมูลแล้ว", delDenied:"เฉพาะ Admin เท่านั้น", printLayout:"รูปแบบใบพิมพ์", orientLand:"แนวนอน", orientPort:"แนวตั้ง"
   },
   en: {
     appTitle:"Pick Check 100", loginTitle:"Login", loginDesc:"Enter employee ID (e.g. TH061378)",
     loginBtn:"Login", tabScan:"Scan & Check", tabStatus:"Status", tabImport:"Import Data",
     btnStartScan:"Open camera - scan Outbound Label", btnLookup:"Search", btnStopScan:"Stop camera",
     btnFinalize:"Confirm 100% Checked", btnClose:"Close / scan next", btnPrint:"Print check sheet",
-    fAll:"All", fPending:"Pending", fChecked:"Checked",
+    fAll:"All", fPending:"Pending", fChecked:"Complete",
     colProduct:"Product", colCs:"Case", colLabel:"Outbound Label", colStore:"Store",
     colProgress:"Items", colStatus:"Status", colCheckedBy:"Checked by", noData:"No data",
     importTitle:"Import WMS Data",
@@ -362,7 +438,18 @@ const DICT = {
     phProductCode:"Product code (PRODUCT_CD)", phProductNameTh:"Product name (Thai)", phProductNameEn:"Product name (Eng)", phMuCs:"MU_CS (MU per 1 Case)",
     btnSaveProduct:"Save", pmFound:"Existing product loaded — edit and press Save", pmNew:"Code not found — fill in and press Save to add",
     pmNeedCode:"Please enter a product code", pmBadMuCs:"MU_CS must be a number greater than 0", pmSaved:"Product saved", pmRecalc:"Updated Case qty on unchecked labels",
-    btnUploadImg:"Upload QR image", dropHint:"Tap to choose / drag & drop / Ctrl+V paste", qrReading:"Reading QR from image...", qrReadFail:"Could not read QR — type the label number shown on the image"
+    btnUploadImg:"Upload QR image", dropHint:"Tap to choose / drag & drop / Ctrl+V paste", qrReading:"Reading QR from image...", qrReadFail:"Could not read QR — type the label number shown on the image",
+    btnSaveResult:"Save check result", chkAll:"All complete", resOk:"Complete", resShort:"Short",
+    sumOk:"Complete", sumShort:"Short", sumTodo:"Not checked", totalItems:"items", totalCs:"Total Case",
+    needAll:"Mark every item before saving", savedOk:"All complete — ready for Outbound", savedReturn:"{n} item(s) short — sent back to Picking",
+    stPending:"Pending", stChecking:"Checking", stChecked:"Complete – to Outbound", stReturned:"Back to Picking",
+    fReturned:"Back to Picking", dupTag:"Dup", prevShort:"Was short", shortNote:"short",
+    phProductNameMy:"Product name (Burmese) — leave blank to auto-translate", trNoUrl:"Translator (GAS) not set up yet",
+    trDone:"Burmese name translated", trFail:"Burmese translation failed", btnTranslateMissing:"Translate missing Burmese names (200 per run)",
+    trRemain:"Still without Burmese name", trNone:"All products have Burmese names", trRunning:"Translating...",
+    adminTitle:"Delete all Outbound data (Admin)", adminDesc:"Deletes all Outbound labels and items imported from Lois (Product Master is kept). Type DELETE, then press delete",
+    btnDeleteAll:"Delete all", delTypeHint:"Type DELETE", delNeedWord:"Type the word DELETE exactly",
+    delConfirm:"Delete ALL Outbound data? This cannot be undone", delDone:"Data deleted", delDenied:"Admin only", printLayout:"Print layout", orientLand:"Landscape", orientPort:"Portrait"
   },
   my: {
     appTitle:"Pick Check 100", loginTitle:"ဝင်ရောက်ရန်", loginDesc:"ဝန်ထမ်းနံပါတ်ထည့်ပါ (ဥပမာ TH061378)",
@@ -388,7 +475,18 @@ const DICT = {
     phProductCode:"ပစ္စည်းကုဒ် (PRODUCT_CD)", phProductNameTh:"ပစ္စည်းအမည် (ထိုင်း)", phProductNameEn:"ပစ္စည်းအမည် (Eng)", phMuCs:"MU_CS (1 Case ရှိ MU)",
     btnSaveProduct:"သိမ်းရန်", pmFound:"ရှိပြီးသား ပစ္စည်း — ပြင်ပြီး သိမ်းပါ", pmNew:"ကုဒ်မတွေ့ပါ — ဖြည့်ပြီး သိမ်းပါ",
     pmNeedCode:"ပစ္စည်းကုဒ် ထည့်ပါ", pmBadMuCs:"MU_CS သည် 0 ထက်ကြီးသော ကိန်းဖြစ်ရမည်", pmSaved:"သိမ်းပြီးပါပြီ", pmRecalc:"မစစ်ရသေးသော လေဘယ်များ၏ Case ကို ပြင်ပြီး",
-    btnUploadImg:"QR ပုံ တင်ရန်", dropHint:"ပုံရွေးပါ / ဆွဲထည့်ပါ / Ctrl+V", qrReading:"ပုံမှ QR ဖတ်နေသည်...", qrReadFail:"QR ဖတ်မရပါ — ပုံပေါ်ရှိ နံပါတ်ကို ရိုက်ထည့်ပါ"
+    btnUploadImg:"QR ပုံ တင်ရန်", dropHint:"ပုံရွေးပါ / ဆွဲထည့်ပါ / Ctrl+V", qrReading:"ပုံမှ QR ဖတ်နေသည်...", qrReadFail:"QR ဖတ်မရပါ — ပုံပေါ်ရှိ နံပါတ်ကို ရိုက်ထည့်ပါ",
+    btnSaveResult:"စစ်ဆေးမှုရလဒ် သိမ်းရန်", chkAll:"အားလုံးပြည့်စုံ", resOk:"ပြည့်စုံ", resShort:"မပြည့်စုံ",
+    sumOk:"ပြည့်စုံ", sumShort:"မပြည့်စုံ", sumTodo:"မစစ်ရသေး", totalItems:"ခု", totalCs:"Case စုစုပေါင်း",
+    needAll:"မသိမ်းမီ ပစ္စည်းအားလုံးကို စစ်ပါ", savedOk:"အားလုံးပြည့်စုံ — Outbound သို့ ပို့နိုင်ပြီ", savedReturn:"{n} ခု မပြည့်စုံ — Picking သို့ ပြန်ပို့",
+    stPending:"စစ်ရန်စောင့်", stChecking:"စစ်နေသည်", stChecked:"ပြည့်စုံ – Outbound", stReturned:"Picking သို့ ပြန်ပို့",
+    fReturned:"Picking သို့ ပြန်ပို့", dupTag:"ထပ်", prevShort:"ယခင် မပြည့်စုံ", shortNote:"မပြည့်စုံ",
+    phProductNameMy:"ပစ္စည်းအမည် (မြန်မာ) — ကွက်လပ်ထားလျှင် အလိုအလျောက် ဘာသာပြန်မည်", trNoUrl:"ဘာသာပြန် (GAS) မသတ်မှတ်ရသေးပါ",
+    trDone:"မြန်မာအမည် ဘာသာပြန်ပြီး", trFail:"ဘာသာပြန်မရပါ", btnTranslateMissing:"မရှိသေးသော မြန်မာအမည် ဘာသာပြန်ရန် (တစ်ကြိမ် 200)",
+    trRemain:"မြန်မာအမည် မရှိသေး", trNone:"ပစ္စည်းအားလုံး မြန်မာအမည် ရှိပြီး", trRunning:"ဘာသာပြန်နေသည်...",
+    adminTitle:"Outbound ဒေတာအားလုံး ဖျက်ရန် (Admin)", adminDesc:"Lois မှ သွင်းထားသော Outbound ဒေတာအားလုံး ဖျက်မည် (Product Master မဖျက်ပါ) DELETE ဟု ရိုက်ပြီး ဖျက်ပါ",
+    btnDeleteAll:"အားလုံးဖျက်ရန်", delTypeHint:"DELETE ဟု ရိုက်ပါ", delNeedWord:"DELETE ဟု မှန်ကန်စွာ ရိုက်ပါ",
+    delConfirm:"Outbound ဒေတာအားလုံး ဖျက်မည်လား? ပြန်ယူ၍မရပါ", delDone:"ဖျက်ပြီးပါပြီ", delDenied:"Admin သာ", printLayout:"ပရင့်ပုံစံ", orientLand:"အလျားလိုက်", orientPort:"ဒေါင်လိုက်"
   }
 };
 let LANG = localStorage.getItem('pc100_lang') || 'th';
@@ -437,6 +535,7 @@ function showApp(){
   document.getElementById('loginView').classList.add('hidden');
   document.getElementById('appView').classList.remove('hidden');
   document.getElementById('empBadge').textContent = currentEmp;
+  document.getElementById('adminCard').classList.toggle('hidden', !ADMIN_EMPS.includes(currentEmp));
 }
 document.getElementById('loginBtn').addEventListener('click', ()=>{
   const v = document.getElementById('empInput').value.trim().toUpperCase();
@@ -479,7 +578,11 @@ document.getElementById('startScanBtn').addEventListener('click', startScan);
 document.getElementById('stopScanBtn').addEventListener('click', stopScan);
 document.getElementById('manualLookupBtn').addEventListener('click', ()=>{
   const v = document.getElementById('manualCodeInput').value.trim();
-  if(v){ const c = normalizeLabelCode_(v); document.getElementById('manualCodeInput').value = c; lookupLabel(c); }
+  if(!v) return;
+  const c = normalizeLabelCode_(v);
+  document.getElementById('manualCodeInput').value = c;
+  const previewOpen = !document.getElementById('qrPreviewWrap').classList.contains('hidden');
+  lookupLabel(c, previewOpen ? previewUrl : null);
 });
 
 /* ---- อ่าน QR จากรูป (อัปโหลด / ลากวาง / Ctrl+V) ---- */
@@ -507,13 +610,27 @@ document.addEventListener('paste', e=>{
   scanImageFile(item.getAsFile());
 });
 
+let previewUrl = null;     // รูปที่อัปล่าสุด (ยังไม่ผูกกับใบไหน)
+let labelPhotoUrl = null;  // รูปที่ผูกกับใบที่เปิดอยู่ (โชว์บนจอ + มุมขวาใบพิมพ์) — ลบทิ้งเมื่อปิด/บันทึกใบ
+
+function clearQrPreview(){
+  const wrap = document.getElementById('qrPreviewWrap');
+  const img = document.getElementById('qrPreviewImg');
+  if(previewUrl && previewUrl !== labelPhotoUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = null;
+  img.removeAttribute('src');
+  document.getElementById('qrPreviewMsg').textContent = '';
+  wrap.classList.add('hidden');
+}
+
 async function scanImageFile(file){
   if(html5QrCode) stopScan(); // กล้องกับอ่านรูปใช้พร้อมกันไม่ได้
+  clearQrPreview();
   const wrap = document.getElementById('qrPreviewWrap');
   const img = document.getElementById('qrPreviewImg');
   const msg = document.getElementById('qrPreviewMsg');
-  if(img.src) URL.revokeObjectURL(img.src);
-  img.src = URL.createObjectURL(file);
+  previewUrl = URL.createObjectURL(file);
+  img.src = previewUrl;
   msg.style.color = 'var(--muted)';
   msg.textContent = T('qrReading');
   wrap.classList.remove('hidden');
@@ -522,8 +639,7 @@ async function scanImageFile(file){
     const text = await reader.scanFile(file, false);
     const code = normalizeLabelCode_(text);
     document.getElementById('manualCodeInput').value = code;
-    wrap.classList.add('hidden');
-    lookupLabel(code);
+    lookupLabel(code, previewUrl);
   }catch(err){
     // อ่านไม่ออก: โชว์รูปค้างไว้ ให้ดูเลขบนใบแล้วพิมพ์เอง
     msg.style.color = 'var(--red)';
@@ -554,126 +670,258 @@ function stopScan(){
   document.getElementById('stopScanBtn').classList.add('hidden');
 }
 
-async function lookupLabel(labelCode){
+let itemResults = {};        // item id -> 'ok' | 'short' | null
+let startedChecking = false;
+
+function statusText(st){
+  return T({pending:'stPending', checking:'stChecking', checked:'stChecked', returned:'stReturned'}[st] || 'stPending');
+}
+
+async function lookupLabel(labelCode, photoUrl){
   const { data: label, error: e1 } = await sb.from('outbound_labels').select('*').eq('label_code', labelCode).maybeSingle();
   if(e1 || !label){ toast(T('notFound')); return; }
   const { data: items, error: e2 } = await sb.from('outbound_label_items').select('*').eq('label_code', labelCode).order('created_at');
   if(e2){ toast('Error: '+e2.message); return; }
+  const list = items || [];
+
+  // ชื่อ ไทย / อังกฤษ / พม่า ดึงสดจาก Product Master (ได้ชื่อพม่าที่แปลทีหลังด้วย)
+  const pmap = {};
+  for(const codes of chunk([...new Set(list.map(i=>i.product_code))], 200)){
+    const { data: ps } = await sb.from('products').select('product_code, product_name, product_name_eng, product_name_my').in('product_code', codes);
+    (ps || []).forEach(p => { pmap[p.product_code] = p; });
+  }
+  const cnt = {};
+  list.forEach(it => { cnt[it.product_code] = (cnt[it.product_code] || 0) + 1; });
+  const wasReturned = label.status === 'returned';
+  itemResults = {};
+  list.forEach(it => {
+    const p = pmap[it.product_code] || {};
+    it.name_th = p.product_name || it.product_name || '';
+    it.name_en = p.product_name_eng || '';
+    it.name_my = p.product_name_my || '';
+    it.dup = cnt[it.product_code] > 1;
+    // ใบที่เคยส่งกลับ Picking: รายการที่เคยไม่ครบ ต้องเช็คใหม่
+    it.prevShort = wasReturned && it.result === 'short';
+    itemResults[it.id] = it.prevShort ? null : (it.result || null);
+  });
+
+  // รูป: ผูกกับใบนี้ (ถ้ามี) แล้วล้างช่อง preview
+  if(labelPhotoUrl && labelPhotoUrl !== photoUrl) URL.revokeObjectURL(labelPhotoUrl);
+  labelPhotoUrl = photoUrl || null;
+  if(photoUrl && photoUrl === previewUrl) previewUrl = null;
+  clearQrPreview();
+
   currentLabel = label;
-  currentItems = items||[];
-  renderLabelCard(label, currentItems);
+  currentItems = list;
+  startedChecking = false;
+  renderLabelCard();
 }
 
-function renderLabelCard(label, items){
+function renderLabelCard(){
+  const label = currentLabel, items = currentItems;
   document.getElementById('scanStartCard').classList.add('hidden');
   document.getElementById('labelCard').classList.remove('hidden');
   document.getElementById('lblCode').textContent = label.label_code;
   document.getElementById('lblStore').textContent = T('store')+': '+(label.customer_store||'-');
   const badge = document.getElementById('lblBadge');
-  badge.className = 'badge ' + label.status;
-  badge.textContent = label.status;
+  badge.className = 'badge ' + (label.status || 'pending');
+  badge.textContent = statusText(label.status);
+  const ph = document.getElementById('lblPhoto');
+  if(labelPhotoUrl){ ph.src = labelPhotoUrl; ph.classList.remove('hidden'); }
+  else { ph.removeAttribute('src'); ph.classList.add('hidden'); }
 
   const list = document.getElementById('itemsList');
   list.innerHTML = '';
   items.forEach(it=>{
     const tr = document.createElement('tr');
+    tr.dataset.id = it.id;
     const csText = (it.qty_cs===null || it.qty_cs===undefined)
       ? `<span class="warn">${T('noMuCsWarn')}</span>`
-      : it.qty_cs;
+      : esc_(it.qty_cs);
     tr.innerHTML = `
-      <td><input type="checkbox" class="chk" data-id="${it.id}" ${it.checked ? 'checked':''}></td>
       <td>
-        <div>${esc_(it.product_name)}</div>
-        <div class="code">${esc_(it.product_code)} <span class="mu">· ${T('muLabel')} ${it.instruction_qty}</span></div>
+        <div class="code">${esc_(it.product_code)}${it.dup ? `<span class="tag dup">${T('dupTag')}</span>` : ''}${it.prevShort ? `<span class="tag prev">${T('prevShort')}</span>` : ''}</div>
+        <div class="nm-th">${esc_(it.name_th)}</div>
+        ${it.name_en ? `<div class="nm-sub">${esc_(it.name_en)}</div>` : ''}
+        ${it.name_my ? `<div class="nm-sub nm-my">${esc_(it.name_my)}</div>` : ''}
       </td>
-      <td class="cs">${csText}</td>
-    `;
+      <td class="cs">${csText}<div class="mu">${T('muLabel')} ${esc_(it.instruction_qty)}</div></td>
+      <td>
+        <div class="resbtns">
+          <button type="button" class="resbtn ok" title="${esc_(T('resOk'))}">✓</button>
+          <button type="button" class="resbtn short" title="${esc_(T('resShort'))}">✗</button>
+        </div>
+      </td>`;
+    tr.querySelector('.resbtn.ok').addEventListener('click', ()=> setResult(it.id, itemResults[it.id]==='ok' ? null : 'ok'));
+    tr.querySelector('.resbtn.short').addEventListener('click', ()=> setResult(it.id, itemResults[it.id]==='short' ? null : 'short'));
     list.appendChild(tr);
-    tr.querySelector('.chk').addEventListener('change', async (ev)=>{
-      const checked = ev.target.checked;
-      await sb.from('outbound_label_items').update({
-        checked, checked_qty: checked ? (it.qty_cs ?? it.instruction_qty) : null,
-        checked_by: currentEmp, checked_at: checked ? new Date().toISOString() : null
-      }).eq('id', it.id);
-      updateProgress();
-    });
   });
-  updateProgress();
+  refreshResultsUI();
 }
 
-async function updateProgress(){
-  const boxes = document.querySelectorAll('#itemsList .chk');
-  const total = boxes.length;
-  const done = [...boxes].filter(b=>b.checked).length;
-  const pct = total ? Math.round(done/total*100) : 0;
-  document.getElementById('lblProgressBar').style.width = pct + '%';
-  await sb.from('outbound_labels').update({
-    checked_items: done, status: done === 0 ? 'pending' : 'checking'
-  }).eq('label_code', currentLabel.label_code);
+function setResult(id, r){
+  itemResults[id] = r;
+  markChecking();
+  refreshResultsUI();
 }
 
-document.getElementById('finalizeBtn').addEventListener('click', ()=>{
-  showModal(T('finalizeConfirm'), async ()=>{
-    await sb.from('outbound_labels').update({
-      status: 'checked', checked_by: currentEmp, checked_at: new Date().toISOString()
-    }).eq('label_code', currentLabel.label_code);
-    toast(T('doneToast'));
-    closeLabelCard();
-  });
+document.getElementById('chkAll').addEventListener('change', e=>{
+  const v = e.target.checked ? 'ok' : null;
+  currentItems.forEach(it => { itemResults[it.id] = v; });
+  markChecking();
+  refreshResultsUI();
 });
+
+function sumCs_(items){
+  return +items.reduce((a,it)=> a + (Number(it.qty_cs) || 0), 0).toFixed(2);
+}
+
+function refreshResultsUI(){
+  let ok = 0, short = 0, todo = 0;
+  currentItems.forEach(it=>{
+    const r = itemResults[it.id];
+    if(r === 'ok') ok++; else if(r === 'short') short++; else todo++;
+    const tr = document.querySelector(`#itemsList tr[data-id="${it.id}"]`);
+    if(!tr) return;
+    tr.classList.toggle('ok', r === 'ok');
+    tr.classList.toggle('short', r === 'short');
+    tr.classList.toggle('dup', !!it.dup);
+    tr.querySelector('.resbtn.ok').classList.toggle('on', r === 'ok');
+    tr.querySelector('.resbtn.short').classList.toggle('on', r === 'short');
+  });
+  const total = currentItems.length;
+  const all = document.getElementById('chkAll');
+  all.checked = total > 0 && ok === total;
+  all.indeterminate = ok > 0 && ok < total;
+  document.getElementById('lblProgressBar').style.width = (total ? Math.round((ok+short)/total*100) : 0) + '%';
+  document.getElementById('checkSummary').innerHTML = `
+    <span class="s-ok">${T('sumOk')} <b>${ok}</b></span>
+    <span class="s-short">${T('sumShort')} <b>${short}</b></span>
+    <span>${T('sumTodo')} <b>${todo}</b></span>
+    <span style="margin-left:auto;"><b>${total}</b> ${T('totalItems')} · ${T('totalCs')} <b>${sumCs_(currentItems)}</b></span>`;
+  document.getElementById('saveResultBtn').disabled = total === 0 || todo > 0;
+}
+
+// แจ้งแท็บสถานะว่ากำลังเช็คใบนี้ (เฉพาะใบที่ยังไม่เช็ค / ส่งกลับ Picking)
+async function markChecking(){
+  if(startedChecking || !currentLabel) return;
+  startedChecking = true;
+  if(currentLabel.status !== 'pending' && currentLabel.status !== 'returned') return;
+  await sb.from('outbound_labels').update({ status: 'checking' }).eq('label_code', currentLabel.label_code);
+}
+
+document.getElementById('saveResultBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('saveResultBtn');
+  const okIds = currentItems.filter(it => itemResults[it.id] === 'ok').map(it => it.id);
+  const shortIds = currentItems.filter(it => itemResults[it.id] === 'short').map(it => it.id);
+  if(okIds.length + shortIds.length !== currentItems.length){ toast(T('needAll')); return; }
+  btn.disabled = true;
+  try{
+    const base = { checked_by: currentEmp, checked_at: new Date().toISOString() };
+    for(const ids of chunk(okIds, 200)){
+      const { error } = await sb.from('outbound_label_items').update({ ...base, result: 'ok', checked: true }).in('id', ids);
+      if(error) throw error;
+    }
+    for(const ids of chunk(shortIds, 200)){
+      const { error } = await sb.from('outbound_label_items').update({ ...base, result: 'short', checked: false }).in('id', ids);
+      if(error) throw error;
+    }
+    const status = shortIds.length ? 'returned' : 'checked';
+    const { error: eL } = await sb.from('outbound_labels').update({
+      ...base, status, checked_items: okIds.length, short_items: shortIds.length
+    }).eq('label_code', currentLabel.label_code);
+    if(eL) throw eL;
+    toast(shortIds.length ? T('savedReturn').replace('{n}', shortIds.length) : T('savedOk'));
+    closeLabelCard();
+  }catch(err){
+    toast('Error: ' + err.message);
+    btn.disabled = false;
+  }
+});
+
 document.getElementById('closeLabelBtn').addEventListener('click', closeLabelCard);
 function closeLabelCard(){
-  document.getElementById('qrPreviewWrap').classList.add('hidden');
+  clearQrPreview();
+  if(labelPhotoUrl) URL.revokeObjectURL(labelPhotoUrl);
+  labelPhotoUrl = null;
+  const ph = document.getElementById('lblPhoto');
+  ph.removeAttribute('src'); ph.classList.add('hidden');
   document.getElementById('labelCard').classList.add('hidden');
   document.getElementById('scanStartCard').classList.remove('hidden');
   document.getElementById('manualCodeInput').value = '';
   currentLabel = null;
   currentItems = [];
+  itemResults = {};
 }
 
-/* ====================== Print (mirrors the paper "Outbound Checker" sheet) ====================== */
+/* ====================== Print (layout ตามชีต "Back Check v3") ====================== */
+function labelQrSvg_(text){
+  try{
+    const qr = qrcode(0, 'M');
+    qr.addData(text);
+    qr.make();
+    return qr.createSvgTag({ cellSize: 3, margin: 0 });
+  }catch(e){ return ''; }
+}
+
+// แนวกระดาษ: เลือกได้ จำค่าไว้ในเครื่อง (ค่าเริ่มต้น แนวนอน)
+const orientSel = document.getElementById('printOrient');
+function applyOrient_(){
+  const o = orientSel.value === 'portrait' ? 'portrait' : 'landscape';
+  document.getElementById('pageStyle').textContent = `@page{size:A4 ${o};margin:10mm;}`;
+}
+try{ orientSel.value = localStorage.getItem('pc100_orient') || 'landscape'; }catch(e){}
+applyOrient_();
+orientSel.addEventListener('change', ()=>{
+  try{ localStorage.setItem('pc100_orient', orientSel.value); }catch(e){}
+  applyOrient_();
+});
+
 document.getElementById('printBtn').addEventListener('click', ()=>{
   if(!currentLabel){ return; }
   const now = new Date();
-  const dateStr = now.toLocaleDateString('th-TH') + ', ' + now.toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const dateStr = now.toLocaleDateString('en-GB') + ', ' + now.toLocaleTimeString('en-GB');
   const rows = currentItems.map(it => `
-    <tr>
+    <tr class="${it.dup ? 'dup' : ''}">
+      <td class="c">${esc_(it.product_code)}</td>
+      <td>${esc_(it.name_th)}</td>
+      <td>${esc_(it.name_en)}${it.name_my ? `<div class="ps-my">${esc_(it.name_my)}</div>` : ''}</td>
       <td class="num">${esc_(it.qty_cs ?? '-')}</td>
-      <td>
-        <div>${esc_(it.product_name)}</div>
-        <div style="font-size:11px;color:#444;">${esc_(it.product_code)}</div>
-      </td>
-      <td class="chkbox"><span class="box"></span></td>
+      <td class="c"><span class="box"></span></td>
       <td></td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
+  const photo = labelPhotoUrl ? `<img src="${labelPhotoUrl}" alt="">` : labelQrSvg_(currentLabel.label_code);
   document.getElementById('printSheet').innerHTML = `
     <div class="ps-wrap">
       <div class="ps-head">
-        <div>
+        <div class="ps-id">
           <div class="ps-code">${esc_(currentLabel.label_code)}</div>
-          <div class="ps-store">${T('store')}: ${esc_(currentLabel.customer_store||'-')}</div>
+          <div class="ps-store">${esc_(currentLabel.customer_store || '-')}</div>
         </div>
         <div class="ps-meta">${dateStr}</div>
+        <div class="ps-photo">${photo}</div>
       </div>
       <table class="ps-table">
+        <colgroup>
+          <col style="width:12%"><col style="width:30%"><col style="width:32%">
+          <col style="width:9%"><col style="width:7%"><col style="width:10%">
+        </colgroup>
         <thead>
-          <tr>
-            <th style="width:70px;">${T('colCs')}</th>
-            <th>${T('colProduct')}</th>
-            <th style="width:46px;">✓</th>
-            <th style="width:120px;">Remark</th>
-          </tr>
+          <tr><th>Product</th><th>สินค้า</th><th>Product</th><th>Qty CS.</th><th>Check</th><th>Remark</th></tr>
         </thead>
-        <tbody>${rows}</tbody>
+        <tbody>
+          ${rows}
+          <tr class="total"><td>${currentItems.length}</td><td></td><td></td><td>${sumCs_(currentItems)}</td><td></td><td></td></tr>
+        </tbody>
       </table>
       <div class="ps-sign">
-        <div>${T('pickerName')}</div>
-        <div>${T('obName')}</div>
+        <div>${T('pickerName')}: <span></span></div>
+        <div>${T('obName')}: <span></span></div>
       </div>
-    </div>
-  `;
-  window.print();
+    </div>`;
+  const img = document.querySelector('#printSheet img');
+  if(img && !img.complete){ img.onload = img.onerror = ()=> window.print(); }
+  else window.print();
 });
 
 /* ====================== Status (Outbound) — data table ====================== */
@@ -701,8 +949,9 @@ document.querySelectorAll('#statusTable thead th[data-sort]').forEach(th=>{
 
 async function loadStatusList(){
   let q = sb.from('outbound_labels').select('*').order('imported_at', { ascending:false }).limit(300);
-  if(statusFilter === 'pending') q = q.neq('status','checked');
+  if(statusFilter === 'pending') q = q.in('status', ['pending','checking']);
   if(statusFilter === 'checked') q = q.eq('status','checked');
+  if(statusFilter === 'returned') q = q.eq('status','returned');
   const { data, error } = await q;
   if(error){ toast('Error: '+error.message); return; }
   statusRows = data || [];
@@ -731,9 +980,10 @@ function renderStatusTable(){
         <div class="progress-cell">
           <span>${l.checked_items}/${l.total_items}</span>
           <span class="mini"><div style="width:${pct}%"></div></span>
+          ${l.short_items ? `<span class="short-note">${T('shortNote')} ${l.short_items}</span>` : ''}
         </div>
       </td>
-      <td><span class="badge ${l.status}">${l.status}</span></td>
+      <td><span class="badge ${esc_(l.status)}">${esc_(statusText(l.status))}</span></td>
       <td class="code">${esc_(l.checked_by||'-')}</td>
     `;
     tbody.appendChild(tr);
@@ -753,7 +1003,21 @@ function chunk(arr, size){
   for(let i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size));
   return out;
 }
+/* ====================== แปลชื่อพม่า (GAS → Google Translate) ====================== */
+async function translateToMy_(texts){
+  if(!TRANSLATE_URL) throw new Error(T('trNoUrl'));
+  const res = await fetch(TRANSLATE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ texts })
+  });
+  const j = await res.json();
+  if(!j.out) throw new Error(j.error || T('trFail'));
+  return j; // { ok, out:[...], error }
+}
+
 /* ====================== Product Master — เพิ่ม/แก้ไขทีละรายการ ====================== */
+let pmLoaded = { th:'', en:'', my:'' };
 document.getElementById('pmLookupBtn').addEventListener('click', async ()=>{
   const code = normalizeId_(document.getElementById('pmCode').value);
   const log = document.getElementById('pmLog');
@@ -763,7 +1027,13 @@ document.getElementById('pmLookupBtn').addEventListener('click', async ()=>{
   if(error){ log.textContent = 'Error: ' + error.message; return; }
   document.getElementById('pmNameTh').value = data ? (data.product_name||'') : '';
   document.getElementById('pmNameEn').value = data ? (data.product_name_eng||'') : '';
+  document.getElementById('pmNameMy').value = data ? (data.product_name_my||'') : '';
   document.getElementById('pmMuCs').value   = data ? data.mu_cs : '';
+  pmLoaded = {
+    th: document.getElementById('pmNameTh').value,
+    en: document.getElementById('pmNameEn').value,
+    my: document.getElementById('pmNameMy').value
+  };
   log.textContent = data ? T('pmFound') : T('pmNew');
 });
 
@@ -776,14 +1046,29 @@ document.getElementById('pmSaveBtn').addEventListener('click', async ()=>{
   if(!(muCs > 0)){ log.textContent = T('pmBadMuCs'); return; }
   btn.disabled = true;
   try{
+    const th = document.getElementById('pmNameTh').value.trim();
+    const en = document.getElementById('pmNameEn').value.trim();
+    let my = document.getElementById('pmNameMy').value.trim();
+    let trMsg = '';
+    // แปลพม่าอัตโนมัติ: ช่องพม่าว่าง หรือแก้ชื่อไทย/อังกฤษแล้วไม่ได้แก้ชื่อพม่าเอง
+    const nameChanged = th !== pmLoaded.th.trim() || en !== pmLoaded.en.trim();
+    if((en || th) && (!my || (nameChanged && my === pmLoaded.my.trim()))){
+      try{
+        const j = await translateToMy_([en || th]);
+        if(j.out[0]){ my = j.out[0]; document.getElementById('pmNameMy').value = my; trMsg = '\n' + T('trDone'); }
+        else trMsg = '\n' + T('trFail') + (j.error ? ': ' + j.error : '');
+      }catch(e){ trMsg = '\n' + T('trFail') + ': ' + e.message; }
+    }
     const { error } = await sb.from('products').upsert({
       product_code: code,
-      product_name: document.getElementById('pmNameTh').value.trim(),
-      product_name_eng: document.getElementById('pmNameEn').value.trim(),
+      product_name: th,
+      product_name_eng: en,
+      product_name_my: my,
       mu_cs: muCs,
       updated_at: new Date().toISOString()
     }, { onConflict: 'product_code' });
     if(error){ log.textContent = 'Error: ' + error.message; return; }
+    pmLoaded = { th, en, my };
 
     // คำนวณ Case ใหม่ให้รายการที่ import ไปแล้วแต่ยังไม่ได้ติ๊กเช็ค (เช่น ตอน import ยังไม่มีสินค้านี้ใน Master)
     const { data: items, error: eSel } = await sb.from('outbound_label_items')
@@ -797,11 +1082,63 @@ document.getElementById('pmSaveBtn').addEventListener('click', async ()=>{
         if(!eUp) fixed++;
       }
     }
-    log.textContent = T('pmSaved') + ': ' + code + (fixed ? `\n${T('pmRecalc')}: ${fixed}` : '');
+    log.textContent = T('pmSaved') + ': ' + code + (fixed ? `\n${T('pmRecalc')}: ${fixed}` : '') + trMsg;
     toast(T('pmSaved'));
   } finally {
     btn.disabled = false;
   }
+});
+
+document.getElementById('trMissingBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('trMissingBtn');
+  const log = document.getElementById('trLog');
+  if(!TRANSLATE_URL){ log.textContent = T('trNoUrl'); return; }
+  btn.disabled = true;
+  log.textContent = T('trRunning');
+  try{
+    const { data: rows, error } = await sb.from('products')
+      .select('product_code, product_name, product_name_eng')
+      .or('product_name_my.is.null,product_name_my.eq.')
+      .limit(200);
+    if(error) throw error;
+    let done = 0, stopErr = '';
+    for(const part of chunk(rows || [], 50)){
+      const j = await translateToMy_(part.map(r => r.product_name_eng || r.product_name || ''));
+      const upd = [];
+      part.forEach((r, i) => { if(j.out[i]) upd.push({ product_code: r.product_code, product_name_my: j.out[i] }); });
+      if(upd.length){
+        const { error: eUp } = await sb.from('products').upsert(upd, { onConflict: 'product_code' });
+        if(eUp) throw eUp;
+        done += upd.length;
+      }
+      log.textContent = `${T('trRunning')} ${done}`;
+      if(j.error){ stopErr = j.error; break; } // โควตาหมด หยุดก่อน
+    }
+    const { count } = await sb.from('products').select('product_code', { count: 'exact', head: true })
+      .or('product_name_my.is.null,product_name_my.eq.');
+    log.textContent = `${T('trDone')}: ${done}` + (count ? `\n${T('trRemain')}: ${count}` : `\n${T('trNone')}`)
+      + (stopErr ? `\n${T('trFail')}: ${stopErr}` : '');
+  }catch(err){
+    log.textContent = T('trFail') + ': ' + err.message;
+  }
+  btn.disabled = false;
+});
+
+document.getElementById('deleteAllBtn').addEventListener('click', ()=>{
+  const log = document.getElementById('delLog');
+  if(!ADMIN_EMPS.includes(currentEmp)){ log.textContent = T('delDenied'); return; }
+  if(document.getElementById('delWord').value.trim().toUpperCase() !== 'DELETE'){ log.textContent = T('delNeedWord'); return; }
+  showModal(T('delConfirm'), async ()=>{
+    const btn = document.getElementById('deleteAllBtn');
+    btn.disabled = true;
+    const { data, error } = await sb.rpc('admin_clear_outbound', { p_emp: currentEmp });
+    btn.disabled = false;
+    if(error){ log.textContent = 'Error: ' + error.message; return; }
+    document.getElementById('delWord').value = '';
+    log.textContent = `${T('delDone')}: ${data || 0} Outbound label`;
+    toast(T('delDone'));
+    closeLabelCard();
+  });
 });
 
 document.getElementById('importProductBtn').addEventListener('click', async ()=>{
@@ -830,18 +1167,29 @@ document.getElementById('importProductBtn').addEventListener('click', async ()=>
     const kName = findKey(rows[0], ['PRODUCT_NM']);
     const kNameEng = findKey(rows[0], ['PRODUCT_NM_ENG']);
     const kMuCs = findKey(rows[0], ['MU_CS']);
+    const kNameMy = findKey(rows[0], ['PRODUCT_NM_MY','PRODUCT_NM_MM','PRODUCT_NM_BURMESE']);
     if(!kCode || !kMuCs){
       log.textContent = 'ไม่พบคอลัมน์ที่ต้องการ (PRODUCT_CD / MU_CS) — ตรวจชื่อหัวคอลัมน์ในไฟล์';
       btn.disabled = false; return;
     }
 
-    const products = rows.map(r => ({
-      product_code: normalizeId_(r[kCode]),
-      product_name: r[kName] || '',
-      product_name_eng: kNameEng ? (r[kNameEng] || '') : '',
-      mu_cs: Number(r[kMuCs]) || 1,
-      updated_at: new Date().toISOString()
-    })).filter(p => p.product_code);
+    // รหัสซ้ำในไฟล์ใช้แถวสุดท้าย (upsert ซ้ำในชุดเดียวกันจะ error)
+    // ไม่มีคอลัมน์ชื่อพม่าในไฟล์ = ไม่ส่งฟิลด์นี้ ชื่อพม่าที่แปลไว้แล้วจะไม่หาย
+    const byCode = new Map();
+    rows.forEach(r => {
+      const code = normalizeId_(r[kCode]);
+      if(!code) return;
+      const rec = {
+        product_code: code,
+        product_name: r[kName] || '',
+        product_name_eng: kNameEng ? (r[kNameEng] || '') : '',
+        mu_cs: Number(r[kMuCs]) || 1,
+        updated_at: new Date().toISOString()
+      };
+      if(kNameMy && String(r[kNameMy]).trim()) rec.product_name_my = String(r[kNameMy]).trim();
+      byCode.set(code, rec);
+    });
+    const products = [...byCode.values()];
 
     const batches = chunk(products, 500);
     let done = 0;

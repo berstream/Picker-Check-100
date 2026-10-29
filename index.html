@@ -56,6 +56,12 @@
   button.btn.outline{background:#fff;color:var(--blue-d);border:1.5px solid var(--blue);}
   button.btn:disabled{opacity:.5;cursor:not-allowed;}
   .row{display:flex;gap:8px;}
+  .dropzone{margin-top:10px;border:2px dashed var(--border-2);border-radius:12px;padding:14px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;transition:.15s;}
+  .dropzone.over{border-color:var(--blue);background:var(--blue-bg);color:var(--blue-d);}
+  .dropzone b{color:var(--blue-d);}
+  #qrPreviewWrap{margin-top:10px;}
+  #qrPreviewWrap img{max-width:100%;max-height:320px;border-radius:12px;border:1px solid var(--border);display:block;margin:0 auto;}
+  #qrPreviewMsg{margin-top:6px;font-size:13px;color:var(--red);text-align:center;}
   .row>*{flex:1;}
   .item-table{width:100%;border-collapse:separate;border-spacing:0 6px;margin-top:4px;}
   .item-table th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);padding:0 10px 4px;}
@@ -184,6 +190,16 @@
           <input type="text" id="manualCodeInput" class="mono" placeholder="หรือพิมพ์เลข Outbound label เอง" style="margin:0;">
           <button class="btn secondary" id="manualLookupBtn" data-i18n="btnLookup" style="flex:0 0 90px;">ค้นหา</button>
         </div>
+        <div class="dropzone" id="qrDrop">
+          <b data-i18n="btnUploadImg">อัปโหลดรูป QR</b>
+          <div data-i18n="dropHint">กดเลือกรูป / ลากรูปมาวาง / Ctrl+V วางรูป</div>
+        </div>
+        <input type="file" id="qrFileInput" accept="image/*" class="hidden">
+        <div id="qrPreviewWrap" class="hidden">
+          <img id="qrPreviewImg" alt="">
+          <div id="qrPreviewMsg"></div>
+        </div>
+        <div id="qrFileReader" class="hidden"></div>
         <div id="reader" class="hidden" style="margin-top:10px;"></div>
         <button class="btn secondary hidden" id="stopScanBtn" data-i18n="btnStopScan" style="margin-top:8px;">ปิดกล้อง</button>
       </div>
@@ -252,6 +268,22 @@
       </div>
 
       <div class="card">
+        <h3 data-i18n="editProductTitle">เพิ่ม/แก้ไขสินค้า</h3>
+        <p style="color:var(--muted);font-size:13px;margin-top:4px;" data-i18n="editProductDesc">
+          ใช้ตอนมีสินค้าใหม่ หรือแก้ MU_CS ทีละรายการ โดยไม่ต้องอัปโหลดไฟล์ใหม่ทั้งหมด
+        </p>
+        <div class="row" style="margin-top:8px;">
+          <input type="text" id="pmCode" class="mono" data-i18n-ph="phProductCode" placeholder="รหัสสินค้า (PRODUCT_CD)" style="margin:0;">
+          <button class="btn secondary" id="pmLookupBtn" data-i18n="btnLookup" style="flex:0 0 90px;">ค้นหา</button>
+        </div>
+        <input type="text" id="pmNameTh" data-i18n-ph="phProductNameTh" placeholder="ชื่อสินค้า (ไทย)" style="margin-top:8px;">
+        <input type="text" id="pmNameEn" data-i18n-ph="phProductNameEn" placeholder="ชื่อสินค้า (Eng)" style="margin-top:8px;">
+        <input type="number" step="any" id="pmMuCs" data-i18n-ph="phMuCs" placeholder="MU_CS" style="margin-top:8px;">
+        <button class="btn" id="pmSaveBtn" data-i18n="btnSaveProduct" style="margin-top:8px;">บันทึก</button>
+        <div id="pmLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
+      </div>
+
+      <div class="card">
         <h3 data-i18n="importTitle">นำเข้าข้อมูล Outbound (A1)</h3>
         <p style="color:var(--muted);font-size:13px;margin-top:4px;" data-i18n="importDesc">
           อัปโหลดไฟล์ Excel/CSV ที่ export จาก LoisWms (ชีต A1 — ต้องมีคอลัมน์: Product, Product Name, Outbound label(TOTE), Customer, Instruction Tot Qty)
@@ -299,7 +331,12 @@ const DICT = {
     importProductTitle:"นำเข้า Product Master",
     importProductDesc:'อัปโหลดไฟล์จากชีต "Produc" (ต้องมีคอลัมน์: PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS) — ทำครั้งแรก แล้วอัปเดตใหม่เมื่อมีสินค้าเพิ่ม',
     btnImportProduct:"นำเข้า Product Master",
-    muLabel:"MU", csLabel:"Case", noMuCsWarn:"ไม่พบใน Product Master — เช็คจำนวนด้วยตนเอง"
+    muLabel:"MU", csLabel:"Case", noMuCsWarn:"ไม่พบใน Product Master — เช็คจำนวนด้วยตนเอง",
+    editProductTitle:"เพิ่ม/แก้ไขสินค้า", editProductDesc:"ใช้ตอนมีสินค้าใหม่ หรือแก้ MU_CS ทีละรายการ โดยไม่ต้องอัปโหลดไฟล์ใหม่ทั้งหมด",
+    phProductCode:"รหัสสินค้า (PRODUCT_CD)", phProductNameTh:"ชื่อสินค้า (ไทย)", phProductNameEn:"ชื่อสินค้า (Eng)", phMuCs:"MU_CS (จำนวน MU ต่อ 1 Case)",
+    btnSaveProduct:"บันทึก", pmFound:"พบสินค้าเดิม — แก้ไขแล้วกดบันทึก", pmNew:"ไม่พบรหัสนี้ — กรอกข้อมูลแล้วกดบันทึกเพื่อเพิ่มใหม่",
+    pmNeedCode:"กรุณาใส่รหัสสินค้า", pmBadMuCs:"MU_CS ต้องเป็นตัวเลขมากกว่า 0", pmSaved:"บันทึกสินค้าแล้ว", pmRecalc:"อัปเดตจำนวน Case ในใบที่ยังไม่เช็ค",
+    btnUploadImg:"อัปโหลดรูป QR", dropHint:"กดเลือกรูป / ลากรูปมาวาง / Ctrl+V วางรูป", qrReading:"กำลังอ่าน QR จากรูป...", qrReadFail:"อ่าน QR จากรูปไม่ออก — ดูเลขบนใบแล้วพิมพ์ในช่องค้นหา"
   },
   en: {
     appTitle:"Pick Check 100", loginTitle:"Login", loginDesc:"Enter employee ID (e.g. TH061378)",
@@ -320,7 +357,12 @@ const DICT = {
     importProductTitle:"Import Product Master",
     importProductDesc:'Upload the "Produc" sheet export (must have columns: PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS) — do this once, re-upload when new products are added',
     btnImportProduct:"Import Product Master",
-    muLabel:"MU", csLabel:"Case", noMuCsWarn:"Not found in Product Master — check quantity manually"
+    muLabel:"MU", csLabel:"Case", noMuCsWarn:"Not found in Product Master — check quantity manually",
+    editProductTitle:"Add / Edit Product", editProductDesc:"For new products or fixing MU_CS one at a time, without re-uploading the whole file",
+    phProductCode:"Product code (PRODUCT_CD)", phProductNameTh:"Product name (Thai)", phProductNameEn:"Product name (Eng)", phMuCs:"MU_CS (MU per 1 Case)",
+    btnSaveProduct:"Save", pmFound:"Existing product loaded — edit and press Save", pmNew:"Code not found — fill in and press Save to add",
+    pmNeedCode:"Please enter a product code", pmBadMuCs:"MU_CS must be a number greater than 0", pmSaved:"Product saved", pmRecalc:"Updated Case qty on unchecked labels",
+    btnUploadImg:"Upload QR image", dropHint:"Tap to choose / drag & drop / Ctrl+V paste", qrReading:"Reading QR from image...", qrReadFail:"Could not read QR — type the label number shown on the image"
   },
   my: {
     appTitle:"Pick Check 100", loginTitle:"ဝင်ရောက်ရန်", loginDesc:"ဝန်ထမ်းနံပါတ်ထည့်ပါ (ဥပမာ TH061378)",
@@ -341,7 +383,12 @@ const DICT = {
     importProductTitle:"Product Master သွင်းရန်",
     importProductDesc:'"Produc" ဖိုင်ကို တင်ပါ (PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS လိုအပ်သည်)',
     btnImportProduct:"Product Master သွင်းမည်",
-    muLabel:"MU", csLabel:"Case", noMuCsWarn:"Product Master တွင် မတွေ့ပါ — ကိုယ်တိုင်စစ်ဆေးပါ"
+    muLabel:"MU", csLabel:"Case", noMuCsWarn:"Product Master တွင် မတွေ့ပါ — ကိုယ်တိုင်စစ်ဆေးပါ",
+    editProductTitle:"ပစ္စည်း ထည့်/ပြင်ရန်", editProductDesc:"ပစ္စည်းအသစ် သို့မဟုတ် MU_CS ကို တစ်ခုချင်း ပြင်ရန်",
+    phProductCode:"ပစ္စည်းကုဒ် (PRODUCT_CD)", phProductNameTh:"ပစ္စည်းအမည် (ထိုင်း)", phProductNameEn:"ပစ္စည်းအမည် (Eng)", phMuCs:"MU_CS (1 Case ရှိ MU)",
+    btnSaveProduct:"သိမ်းရန်", pmFound:"ရှိပြီးသား ပစ္စည်း — ပြင်ပြီး သိမ်းပါ", pmNew:"ကုဒ်မတွေ့ပါ — ဖြည့်ပြီး သိမ်းပါ",
+    pmNeedCode:"ပစ္စည်းကုဒ် ထည့်ပါ", pmBadMuCs:"MU_CS သည် 0 ထက်ကြီးသော ကိန်းဖြစ်ရမည်", pmSaved:"သိမ်းပြီးပါပြီ", pmRecalc:"မစစ်ရသေးသော လေဘယ်များ၏ Case ကို ပြင်ပြီး",
+    btnUploadImg:"QR ပုံ တင်ရန်", dropHint:"ပုံရွေးပါ / ဆွဲထည့်ပါ / Ctrl+V", qrReading:"ပုံမှ QR ဖတ်နေသည်...", qrReadFail:"QR ဖတ်မရပါ — ပုံပေါ်ရှိ နံပါတ်ကို ရိုက်ထည့်ပါ"
   }
 };
 let LANG = localStorage.getItem('pc100_lang') || 'th';
@@ -349,6 +396,9 @@ function T(k){ return (DICT[LANG] && DICT[LANG][k]) || DICT.th[k] || k; }
 function applyI18n(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     el.textContent = T(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    el.placeholder = T(el.getAttribute('data-i18n-ph'));
   });
   document.getElementById('langSel').value = LANG;
 }
@@ -412,6 +462,12 @@ document.querySelectorAll('nav .tab').forEach(btn=>{
 
 /* ====================== normalizeId ====================== */
 function normalizeId_(v){ return String(v==null?'':v).trim().toUpperCase().replace(/^'/, ''); }
+// Outbound label (TOTE) รูปแบบ: ตัวอักษร O + ตัวเลข 13 หลัก — แต่ "O" กับ "0" หน้าสุด
+// มักพิมพ์/สแกน/อ่านสลับกัน จึงบังคับให้ตัวแรกเป็น "O" เสมอเมื่อรูปแบบตรงเงื่อนไขนี้
+function normalizeLabelCode_(v){
+  const s = normalizeId_(v);
+  return /^[O0][0-9]{13}$/.test(s) ? ('O' + s.slice(1)) : s;
+}
 function esc_(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ====================== Scan & Check ====================== */
@@ -423,8 +479,60 @@ document.getElementById('startScanBtn').addEventListener('click', startScan);
 document.getElementById('stopScanBtn').addEventListener('click', stopScan);
 document.getElementById('manualLookupBtn').addEventListener('click', ()=>{
   const v = document.getElementById('manualCodeInput').value.trim();
-  if(v) lookupLabel(normalizeId_(v));
+  if(v){ const c = normalizeLabelCode_(v); document.getElementById('manualCodeInput').value = c; lookupLabel(c); }
 });
+
+/* ---- อ่าน QR จากรูป (อัปโหลด / ลากวาง / Ctrl+V) ---- */
+const qrDrop = document.getElementById('qrDrop');
+const qrFileInput = document.getElementById('qrFileInput');
+qrDrop.addEventListener('click', ()=> qrFileInput.click());
+qrFileInput.addEventListener('change', ()=>{
+  const f = qrFileInput.files[0];
+  if(f) scanImageFile(f);
+  qrFileInput.value = '';
+});
+['dragenter','dragover'].forEach(ev => qrDrop.addEventListener(ev, e=>{ e.preventDefault(); qrDrop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => qrDrop.addEventListener(ev, e=>{ e.preventDefault(); qrDrop.classList.remove('over'); }));
+qrDrop.addEventListener('drop', e=>{
+  const f = [...(e.dataTransfer.files||[])].find(x=>x.type.startsWith('image/'));
+  if(f) scanImageFile(f);
+});
+document.addEventListener('paste', e=>{
+  // รับเฉพาะตอนอยู่หน้าสแกนเช็ค และยังไม่ได้เปิดใบไหน
+  if(document.getElementById('view-scan').classList.contains('hidden')) return;
+  if(document.getElementById('scanStartCard').classList.contains('hidden')) return;
+  const item = [...(e.clipboardData ? e.clipboardData.items : [])].find(i=>i.type.startsWith('image/'));
+  if(!item) return; // วางข้อความปกติในช่องค้นหาได้ตามเดิม
+  e.preventDefault();
+  scanImageFile(item.getAsFile());
+});
+
+async function scanImageFile(file){
+  if(html5QrCode) stopScan(); // กล้องกับอ่านรูปใช้พร้อมกันไม่ได้
+  const wrap = document.getElementById('qrPreviewWrap');
+  const img = document.getElementById('qrPreviewImg');
+  const msg = document.getElementById('qrPreviewMsg');
+  if(img.src) URL.revokeObjectURL(img.src);
+  img.src = URL.createObjectURL(file);
+  msg.style.color = 'var(--muted)';
+  msg.textContent = T('qrReading');
+  wrap.classList.remove('hidden');
+  const reader = new Html5Qrcode('qrFileReader');
+  try{
+    const text = await reader.scanFile(file, false);
+    const code = normalizeLabelCode_(text);
+    document.getElementById('manualCodeInput').value = code;
+    wrap.classList.add('hidden');
+    lookupLabel(code);
+  }catch(err){
+    // อ่านไม่ออก: โชว์รูปค้างไว้ ให้ดูเลขบนใบแล้วพิมพ์เอง
+    msg.style.color = 'var(--red)';
+    msg.textContent = T('qrReadFail');
+    document.getElementById('manualCodeInput').focus();
+  }finally{
+    try{ reader.clear(); }catch(e){}
+  }
+}
 
 function startScan(){
   document.getElementById('reader').classList.remove('hidden');
@@ -433,7 +541,7 @@ function startScan(){
   const config = { fps: 10, qrbox: { width: 260, height: 160 } };
   html5QrCode.start(
     { facingMode: "environment" }, config,
-    (decodedText)=>{ stopScan(); lookupLabel(normalizeId_(decodedText)); },
+    (decodedText)=>{ stopScan(); lookupLabel(normalizeLabelCode_(decodedText)); },
     ()=>{}
   ).catch(e=>{ toast('Camera error: '+e); });
 }
@@ -515,6 +623,7 @@ document.getElementById('finalizeBtn').addEventListener('click', ()=>{
 });
 document.getElementById('closeLabelBtn').addEventListener('click', closeLabelCard);
 function closeLabelCard(){
+  document.getElementById('qrPreviewWrap').classList.add('hidden');
   document.getElementById('labelCard').classList.add('hidden');
   document.getElementById('scanStartCard').classList.remove('hidden');
   document.getElementById('manualCodeInput').value = '';
@@ -644,6 +753,57 @@ function chunk(arr, size){
   for(let i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size));
   return out;
 }
+/* ====================== Product Master — เพิ่ม/แก้ไขทีละรายการ ====================== */
+document.getElementById('pmLookupBtn').addEventListener('click', async ()=>{
+  const code = normalizeId_(document.getElementById('pmCode').value);
+  const log = document.getElementById('pmLog');
+  if(!code){ log.textContent = T('pmNeedCode'); return; }
+  document.getElementById('pmCode').value = code;
+  const { data, error } = await sb.from('products').select('*').eq('product_code', code).maybeSingle();
+  if(error){ log.textContent = 'Error: ' + error.message; return; }
+  document.getElementById('pmNameTh').value = data ? (data.product_name||'') : '';
+  document.getElementById('pmNameEn').value = data ? (data.product_name_eng||'') : '';
+  document.getElementById('pmMuCs').value   = data ? data.mu_cs : '';
+  log.textContent = data ? T('pmFound') : T('pmNew');
+});
+
+document.getElementById('pmSaveBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('pmSaveBtn');
+  const log = document.getElementById('pmLog');
+  const code = normalizeId_(document.getElementById('pmCode').value);
+  const muCs = Number(document.getElementById('pmMuCs').value);
+  if(!code){ log.textContent = T('pmNeedCode'); return; }
+  if(!(muCs > 0)){ log.textContent = T('pmBadMuCs'); return; }
+  btn.disabled = true;
+  try{
+    const { error } = await sb.from('products').upsert({
+      product_code: code,
+      product_name: document.getElementById('pmNameTh').value.trim(),
+      product_name_eng: document.getElementById('pmNameEn').value.trim(),
+      mu_cs: muCs,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'product_code' });
+    if(error){ log.textContent = 'Error: ' + error.message; return; }
+
+    // คำนวณ Case ใหม่ให้รายการที่ import ไปแล้วแต่ยังไม่ได้ติ๊กเช็ค (เช่น ตอน import ยังไม่มีสินค้านี้ใน Master)
+    const { data: items, error: eSel } = await sb.from('outbound_label_items')
+      .select('id, instruction_qty').eq('product_code', code).eq('checked', false);
+    let fixed = 0;
+    if(!eSel && items){
+      for(const it of items){
+        const { error: eUp } = await sb.from('outbound_label_items').update({
+          mu_cs: muCs, qty_cs: +(Number(it.instruction_qty) / muCs).toFixed(2)
+        }).eq('id', it.id);
+        if(!eUp) fixed++;
+      }
+    }
+    log.textContent = T('pmSaved') + ': ' + code + (fixed ? `\n${T('pmRecalc')}: ${fixed}` : '');
+    toast(T('pmSaved'));
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 document.getElementById('importProductBtn').addEventListener('click', async ()=>{
   const file = document.getElementById('importProductFile').files[0];
   const log = document.getElementById('importProductLog');
@@ -735,7 +895,7 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
 
     const byLabel = {};
     rows.forEach(r=>{
-      const labelCode = normalizeId_(r[kLabel]);
+      const labelCode = normalizeLabelCode_(r[kLabel]);
       if(!labelCode) return;
       if(!byLabel[labelCode]) byLabel[labelCode] = { customer: r[kCustomer]||'', items: [] };
       byLabel[labelCode].items.push({
@@ -759,9 +919,10 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
     log.textContent = `พบ ${labelCodes.length} Outbound label, ${rows.length} รายการสินค้า — กำลังนำเข้า...`;
 
     let done = 0;
+    const failedLabels = [];
     for(const code of labelCodes){
       const g = byLabel[code];
-      await sb.from('outbound_labels').upsert({
+      const { error: eHead } = await sb.from('outbound_labels').upsert({
         label_code: code,
         customer_store: g.customer,
         total_items: g.items.length,
@@ -770,7 +931,11 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
         imported_at: new Date().toISOString(),
         imported_batch: file.name
       }, { onConflict: 'label_code' });
-      await sb.from('outbound_label_items').delete().eq('label_code', code);
+      if(eHead){ failedLabels.push(code + ' (header: ' + eHead.message + ')'); continue; }
+
+      const { error: eDel } = await sb.from('outbound_label_items').delete().eq('label_code', code);
+      if(eDel){ failedLabels.push(code + ' (delete: ' + eDel.message + ')'); continue; }
+
       const rowsToInsert = g.items.map(it => {
         const muCs = muCsMap[it.product_code];
         if(muCs === undefined) notFoundCount++;
@@ -781,13 +946,22 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
           qty_cs: (muCs && muCs > 0) ? +(it.instruction_qty / muCs).toFixed(2) : null
         };
       });
-      await sb.from('outbound_label_items').insert(rowsToInsert);
+      const { error: eIns, data: insData } = await sb.from('outbound_label_items').insert(rowsToInsert).select('id');
+      if(eIns){
+        failedLabels.push(code + ' (insert: ' + eIns.message + ')');
+        // header already says total_items=N but 0 rows actually landed — reflect reality
+        await sb.from('outbound_labels').update({ total_items: 0 }).eq('label_code', code);
+      } else if(!insData || insData.length !== rowsToInsert.length){
+        failedLabels.push(code + ` (insert: expected ${rowsToInsert.length} rows, got ${insData ? insData.length : 0})`);
+        await sb.from('outbound_labels').update({ total_items: insData ? insData.length : 0 }).eq('label_code', code);
+      }
       done++;
       log.textContent = `นำเข้าแล้ว ${done}/${labelCodes.length} ใบ...`;
     }
     log.textContent = `${T('importDone')}: ${labelCodes.length} Outbound label, ${rows.length} รายการสินค้า`
-      + (notFoundCount ? `\n⚠ ${notFoundCount} รายการไม่พบใน Product Master (เช็คด้วยตนเอง)` : '');
-    toast(T('importDone'));
+      + (notFoundCount ? `\n⚠ ${notFoundCount} รายการไม่พบใน Product Master (เช็คด้วยตนเอง)` : '')
+      + (failedLabels.length ? `\n\n❌ ${failedLabels.length} ใบ import รายการสินค้าไม่สำเร็จ:\n` + failedLabels.slice(0,20).join('\n') + (failedLabels.length>20 ? `\n…และอีก ${failedLabels.length-20} ใบ` : '') : '');
+    toast(failedLabels.length ? ('นำเข้าสำเร็จบางส่วน — มี ' + failedLabels.length + ' ใบผิดพลาด') : T('importDone'));
   }catch(err){
     log.textContent = 'Error: ' + err.message;
   }

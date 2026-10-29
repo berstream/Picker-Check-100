@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Pick Check 100 - WFDC</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --blue:#1565c0; --blue-d:#0d47a1; --green:#2e7d32; --red:#c62828; --amber:#f9a825;
+    --bg:#f4f6f8; --card:#ffffff; --text:#1a1a1a; --muted:#6b7280; --border:#e0e3e8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  header{background:var(--blue-d);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;}
+  header h1{font-size:16px;margin:0;font-weight:600;}
+  header .emp{font-size:12px;opacity:.9;}
+  select#langSel{background:#fff;border:none;border-radius:6px;padding:4px 6px;font-size:12px;}
+  nav{display:flex;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:48px;z-index:19;overflow-x:auto;}
+  nav button{flex:1;min-width:90px;padding:10px 6px;background:none;border:none;font-size:13px;color:var(--muted);border-bottom:3px solid transparent;}
+  nav button.active{color:var(--blue-d);border-bottom-color:var(--blue-d);font-weight:600;}
+  main{padding:14px;max-width:720px;margin:0 auto;padding-bottom:60px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
+  .hidden{display:none !important;}
+  input[type=text], input[type=file]{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:15px;margin:6px 0;}
+  button.btn{padding:11px 16px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-size:15px;font-weight:600;cursor:pointer;width:100%;}
+  button.btn.secondary{background:#eceff3;color:var(--text);}
+  button.btn.green{background:var(--green);}
+  button.btn:disabled{opacity:.5;}
+  .row{display:flex;gap:8px;}
+  .row>*{flex:1;}
+  .item-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+  .item-row:last-child{border-bottom:none;}
+  .item-row .meta{flex:1;}
+  .item-row .meta .code{font-size:12px;color:var(--muted);}
+  .item-row .meta .name{font-size:14px;}
+  .item-row .qty{font-size:14px;font-weight:600;margin:0 10px;white-space:nowrap;}
+  .chk{width:26px;height:26px;}
+  .badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:12px;font-weight:600;}
+  .badge.pending{background:#fff3e0;color:#e65100;}
+  .badge.checking{background:#e3f2fd;color:var(--blue-d);}
+  .badge.checked{background:#e8f5e9;color:var(--green);}
+  #reader{width:100%;border-radius:10px;overflow:hidden;}
+  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;z-index:50;max-width:90%;text-align:center;}
+  .status-card{display:flex;justify-content:space-between;align-items:center;}
+  .label-code{font-weight:700;font-size:16px;}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:-3px;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .footer-credit{text-align:center;color:var(--muted);font-size:11px;margin-top:20px;}
+  .progressbar{height:6px;background:#eceff3;border-radius:3px;overflow:hidden;margin-top:6px;}
+  .progressbar>div{height:100%;background:var(--green);}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:40;}
+  .modal{background:#fff;border-radius:10px;padding:18px;max-width:340px;width:90%;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 data-i18n="appTitle">Pick Check 100</h1>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="emp" id="empBadge"></span>
+    <select id="langSel">
+      <option value="th">TH</option>
+      <option value="en">EN</option>
+      <option value="my">MY</option>
+    </select>
+  </div>
+</header>
+
+<!-- LOGIN -->
+<main id="loginView">
+  <div class="card">
+    <h3 data-i18n="loginTitle">เข้าสู่ระบบ</h3>
+    <p data-i18n="loginDesc" style="color:var(--muted);font-size:13px;">กรอกเลขพนักงาน (เช่น TH061378)</p>
+    <input type="text" id="empInput" placeholder="TH061378" maxlength="9" autocapitalize="characters">
+    <button class="btn" id="loginBtn" data-i18n="loginBtn">เข้าสู่ระบบ</button>
+    <div id="loginErr" style="color:var(--red);font-size:13px;margin-top:6px;"></div>
+  </div>
+</main>
+
+<!-- APP -->
+<div id="appView" class="hidden">
+  <nav>
+    <button class="tab active" data-tab="scan" data-i18n="tabScan">สแกนเช็ค</button>
+    <button class="tab" data-tab="status" data-i18n="tabStatus">สถานะ</button>
+    <button class="tab" data-tab="import" data-i18n="tabImport">นำเข้าข้อมูล</button>
+  </nav>
+
+  <main>
+    <!-- SCAN & CHECK -->
+    <section id="view-scan">
+      <div class="card" id="scanStartCard">
+        <button class="btn" id="startScanBtn" data-i18n="btnStartScan">เปิดกล้องสแกน Outbound Label</button>
+        <div style="margin-top:10px;" class="row">
+          <input type="text" id="manualCodeInput" placeholder="หรือพิมพ์เลข Outbound label เอง">
+          <button class="btn secondary" id="manualLookupBtn" data-i18n="btnLookup" style="flex:0 0 90px;">ค้นหา</button>
+        </div>
+        <div id="reader" class="hidden" style="margin-top:10px;"></div>
+        <button class="btn secondary hidden" id="stopScanBtn" data-i18n="btnStopScan" style="margin-top:8px;">ปิดกล้อง</button>
+      </div>
+
+      <div class="card hidden" id="labelCard">
+        <div class="status-card">
+          <div>
+            <div class="label-code" id="lblCode"></div>
+            <div style="font-size:13px;color:var(--muted);" id="lblStore"></div>
+          </div>
+          <span class="badge" id="lblBadge"></span>
+        </div>
+        <div class="progressbar"><div id="lblProgressBar" style="width:0%"></div></div>
+        <div id="itemsList" style="margin-top:10px;"></div>
+        <button class="btn green" id="finalizeBtn" style="margin-top:12px;" data-i18n="btnFinalize">ยืนยันเช็คครบ 100%</button>
+        <button class="btn secondary" id="closeLabelBtn" style="margin-top:8px;" data-i18n="btnClose">ปิด / สแกนใบถัดไป</button>
+      </div>
+    </section>
+
+    <!-- STATUS -->
+    <section id="view-status" class="hidden">
+      <div class="card">
+        <div class="row" style="margin-bottom:6px;">
+          <button class="btn secondary filterBtn active" data-f="all" data-i18n="fAll">ทั้งหมด</button>
+          <button class="btn secondary filterBtn" data-f="pending" data-i18n="fPending">ยังไม่เช็ค</button>
+          <button class="btn secondary filterBtn" data-f="checked" data-i18n="fChecked">เช็คแล้ว</button>
+        </div>
+      </div>
+      <div id="statusList"></div>
+    </section>
+
+    <!-- IMPORT -->
+    <section id="view-import" class="hidden">
+      <div class="card">
+        <h3 data-i18n="importProductTitle">นำเข้า Product Master</h3>
+        <p style="color:var(--muted);font-size:13px;" data-i18n="importProductDesc">
+          อัปโหลดไฟล์จากชีต "Produc" (ต้องมีคอลัมน์: PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS) — ทำครั้งแรก แล้วอัปเดตใหม่เมื่อมีสินค้าเพิ่ม
+        </p>
+        <input type="file" id="importProductFile" accept=".xlsx,.xls,.csv">
+        <button class="btn secondary" id="importProductBtn" data-i18n="btnImportProduct">นำเข้า Product Master</button>
+        <div id="importProductLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="importTitle">นำเข้าข้อมูล Outbound (A1)</h3>
+        <p style="color:var(--muted);font-size:13px;" data-i18n="importDesc">
+          อัปโหลดไฟล์ Excel/CSV ที่ export จาก LoisWms (ชีต A1 — ต้องมีคอลัมน์: Product, Product Name, Outbound label(TOTE), Customer, Instruction Tot Qty)
+        </p>
+        <input type="file" id="importFile" accept=".xlsx,.xls,.csv">
+        <button class="btn" id="importBtn" data-i18n="btnImport">นำเข้าข้อมูล</button>
+        <div id="importLog" style="margin-top:10px;font-size:13px;white-space:pre-wrap;"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="footer-credit">CJ IT By Nutdanai Pathsith — WFDC</div>
+
+<script>
+/* ====================== CONFIG ======================
+   TODO: ใส่ค่าจริงหลังสร้าง Supabase project "Pick Check 100"
+   Supabase Dashboard > Project Settings > API
+   - Project URL      -> SUPABASE_URL
+   - anon public key  -> SUPABASE_ANON_KEY
+======================================================= */
+const SUPABASE_URL = "https://bwgkcbxznwhplyxyjdky.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_8RjhbgG7Y-JCLZb93OmvKw_U_pUCxbh";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ====================== i18n ====================== */
+const DICT = {
+  th: {
+    appTitle:"Pick Check 100", loginTitle:"เข้าสู่ระบบ", loginDesc:"กรอกเลขพนักงาน (เช่น TH061378)",
+    loginBtn:"เข้าสู่ระบบ", tabScan:"สแกนเช็ค", tabStatus:"สถานะ", tabImport:"นำเข้าข้อมูล",
+    btnStartScan:"เปิดกล้องสแกน Outbound Label", btnLookup:"ค้นหา", btnStopScan:"ปิดกล้อง",
+    btnFinalize:"ยืนยันเช็คครบ 100%", btnClose:"ปิด / สแกนใบถัดไป",
+    fAll:"ทั้งหมด", fPending:"ยังไม่เช็ค", fChecked:"เช็คแล้ว",
+    importTitle:"นำเข้าข้อมูล WMS",
+    importDesc:"อัปโหลดไฟล์ Excel/CSV ที่ export จาก WMS (ต้องมีคอลัมน์: Product, Product Name, Outbound label(TOTE), Customer, Instruction Tot Qty)",
+    btnImport:"นำเข้าข้อมูล",
+    errBadEmp:"เลขพนักงานไม่ถูกต้อง (ต้องเป็น TH ตามด้วยเลข 6 หลัก)",
+    notFound:"ไม่พบ Outbound label นี้ในระบบ", alreadyChecked:"ใบนี้เช็คครบแล้ว",
+    scanHint:"กำลังเปิดกล้อง...", finalizeConfirm:"ยืนยันว่าเช็คครบ 100% แล้ว?",
+    doneToast:"เช็คครบ 100% แล้ว", importDone:"นำเข้าเสร็จแล้ว", importing:"กำลังนำเข้า...",
+    store:"Store", checkedBy:"เช็คโดย",
+    importProductTitle:"นำเข้า Product Master",
+    importProductDesc:'อัปโหลดไฟล์จากชีต "Produc" (ต้องมีคอลัมน์: PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS) — ทำครั้งแรก แล้วอัปเดตใหม่เมื่อมีสินค้าเพิ่ม',
+    btnImportProduct:"นำเข้า Product Master",
+    muLabel:"MU", csLabel:"Case", noMuCsWarn:"ไม่พบใน Product Master — เช็คจำนวนด้วยตนเอง"
+  },
+  en: {
+    appTitle:"Pick Check 100", loginTitle:"Login", loginDesc:"Enter employee ID (e.g. TH061378)",
+    loginBtn:"Login", tabScan:"Scan & Check", tabStatus:"Status", tabImport:"Import Data",
+    btnStartScan:"Open camera - scan Outbound Label", btnLookup:"Search", btnStopScan:"Stop camera",
+    btnFinalize:"Confirm 100% Checked", btnClose:"Close / scan next",
+    fAll:"All", fPending:"Pending", fChecked:"Checked",
+    importTitle:"Import WMS Data",
+    importDesc:"Upload the WMS export Excel/CSV (must have columns: Product, Product Name, Outbound label(TOTE), Customer, Instruction Tot Qty)",
+    btnImport:"Import",
+    errBadEmp:"Invalid employee ID (must be TH followed by 6 digits)",
+    notFound:"Outbound label not found", alreadyChecked:"This label is already fully checked",
+    scanHint:"Starting camera...", finalizeConfirm:"Confirm this label is fully checked (100%)?",
+    doneToast:"Checked 100%", importDone:"Import complete", importing:"Importing...",
+    store:"Store", checkedBy:"Checked by",
+    importProductTitle:"Import Product Master",
+    importProductDesc:'Upload the "Produc" sheet export (must have columns: PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS) — do this once, re-upload when new products are added',
+    btnImportProduct:"Import Product Master",
+    muLabel:"MU", csLabel:"Case", noMuCsWarn:"Not found in Product Master — check quantity manually"
+  },
+  my: {
+    appTitle:"Pick Check 100", loginTitle:"ဝင်ရောက်ရန်", loginDesc:"ဝန်ထမ်းနံပါတ်ထည့်ပါ (ဥပမာ TH061378)",
+    loginBtn:"ဝင်ရောက်မည်", tabScan:"စကင်ဖတ်စစ်ဆေးရန်", tabStatus:"အခြေအနေ", tabImport:"ဒေတာသွင်းရန်",
+    btnStartScan:"ကင်မရာဖွင့်၍ Outbound Label ကိုစကင်ဖတ်ပါ", btnLookup:"ရှာဖွေရန်", btnStopScan:"ကင်မရာပိတ်ရန်",
+    btnFinalize:"100% စစ်ဆေးပြီးကြောင်းအတည်ပြုရန်", btnClose:"ပိတ် / နောက်တစ်ခုစကင်ဖတ်ရန်",
+    fAll:"အားလုံး", fPending:"မစစ်ဆေးရသေး", fChecked:"စစ်ဆေးပြီး",
+    importTitle:"WMS ဒေတာသွင်းရန်",
+    importDesc:"WMS ထုတ်ယူထားသော Excel/CSV ဖိုင်ကို တင်ပါ",
+    btnImport:"ဒေတာသွင်းမည်",
+    errBadEmp:"ဝန်ထမ်းနံပါတ် မှားယွင်းနေပါသည်",
+    notFound:"Outbound label ကို ရှာမတွေ့ပါ", alreadyChecked:"ဤလေဘယ်ကို 100% စစ်ဆေးပြီးပါပြီ",
+    scanHint:"ကင်မရာဖွင့်နေသည်...", finalizeConfirm:"100% စစ်ဆေးပြီးကြောင်း အတည်ပြုမည်လား?",
+    doneToast:"100% စစ်ဆေးပြီးပါပြီ", importDone:"ဒေတာသွင်းခြင်း ပြီးစီးပါပြီ", importing:"သွင်းနေသည်...",
+    store:"Store", checkedBy:"စစ်ဆေးသူ",
+    importProductTitle:"Product Master သွင်းရန်",
+    importProductDesc:'"Produc" ဖိုင်ကို တင်ပါ (PRODUCT_CD, PRODUCT_NM, PRODUCT_NM_ENG, MU_CS လိုအပ်သည်)',
+    btnImportProduct:"Product Master သွင်းမည်",
+    muLabel:"MU", csLabel:"Case", noMuCsWarn:"Product Master တွင် မတွေ့ပါ — ကိုယ်တိုင်စစ်ဆေးပါ"
+  }
+};
+let LANG = localStorage.getItem('pc100_lang') || 'th';
+function T(k){ return (DICT[LANG] && DICT[LANG][k]) || DICT.th[k] || k; }
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    el.textContent = T(el.getAttribute('data-i18n'));
+  });
+  document.getElementById('langSel').value = LANG;
+}
+document.getElementById('langSel').addEventListener('change', e=>{
+  LANG = e.target.value; localStorage.setItem('pc100_lang', LANG); applyI18n();
+});
+
+/* ====================== Toast ====================== */
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2600);
+}
+function showModal(message, onConfirm){
+  const bg = document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML = `<div class="modal"><p>${message}</p>
+    <div class="row">
+      <button class="btn secondary" id="mCancel">Cancel</button>
+      <button class="btn" id="mOk">OK</button>
+    </div></div>`;
+  document.body.appendChild(bg);
+  bg.querySelector('#mCancel').onclick = ()=>bg.remove();
+  bg.querySelector('#mOk').onclick = ()=>{ bg.remove(); onConfirm(); };
+}
+
+/* ====================== Login ====================== */
+const EMP_RE = /^TH\d{6}$/i;
+let currentEmp = localStorage.getItem('pc100_emp') || '';
+
+function showLogin(){
+  document.getElementById('loginView').classList.remove('hidden');
+  document.getElementById('appView').classList.add('hidden');
+}
+function showApp(){
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('appView').classList.remove('hidden');
+  document.getElementById('empBadge').textContent = currentEmp;
+}
+document.getElementById('loginBtn').addEventListener('click', ()=>{
+  const v = document.getElementById('empInput').value.trim().toUpperCase();
+  const err = document.getElementById('loginErr');
+  if(!EMP_RE.test(v)){ err.textContent = T('errBadEmp'); return; }
+  err.textContent = '';
+  currentEmp = v;
+  localStorage.setItem('pc100_emp', v);
+  showApp();
+  loadStatusList();
+});
+
+/* ====================== Tabs ====================== */
+document.querySelectorAll('nav .tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav .tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('main section[id^="view-"]').forEach(s=>s.classList.add('hidden'));
+    document.getElementById('view-'+btn.dataset.tab).classList.remove('hidden');
+    if(btn.dataset.tab === 'status') loadStatusList();
+  });
+});
+
+/* ====================== normalizeId ====================== */
+function normalizeId_(v){ return String(v==null?'':v).trim().toUpperCase().replace(/^'/, ''); }
+
+/* ====================== Scan & Check ====================== */
+let html5QrCode = null;
+let currentLabel = null; // {label_code, items:[...]}
+
+document.getElementById('startScanBtn').addEventListener('click', startScan);
+document.getElementById('stopScanBtn').addEventListener('click', stopScan);
+document.getElementById('manualLookupBtn').addEventListener('click', ()=>{
+  const v = document.getElementById('manualCodeInput').value.trim();
+  if(v) lookupLabel(normalizeId_(v));
+});
+
+function startScan(){
+  document.getElementById('reader').classList.remove('hidden');
+  document.getElementById('stopScanBtn').classList.remove('hidden');
+  html5QrCode = new Html5Qrcode("reader");
+  const config = { fps: 10, qrbox: { width: 260, height: 160 } };
+  html5QrCode.start(
+    { facingMode: "environment" }, config,
+    (decodedText)=>{ stopScan(); lookupLabel(normalizeId_(decodedText)); },
+    ()=>{} // scan failure callback — ignore (fires continuously while searching)
+  ).catch(e=>{ toast('Camera error: '+e); });
+}
+function stopScan(){
+  if(html5QrCode){
+    html5QrCode.stop().then(()=>html5QrCode.clear()).catch(()=>{});
+    html5QrCode = null;
+  }
+  document.getElementById('reader').classList.add('hidden');
+  document.getElementById('stopScanBtn').classList.add('hidden');
+}
+
+async function lookupLabel(labelCode){
+  const { data: label, error: e1 } = await sb.from('outbound_labels').select('*').eq('label_code', labelCode).maybeSingle();
+  if(e1 || !label){ toast(T('notFound')); return; }
+  const { data: items, error: e2 } = await sb.from('outbound_label_items').select('*').eq('label_code', labelCode).order('created_at');
+  if(e2){ toast('Error: '+e2.message); return; }
+  currentLabel = label;
+  renderLabelCard(label, items||[]);
+}
+
+function renderLabelCard(label, items){
+  document.getElementById('scanStartCard').classList.add('hidden');
+  document.getElementById('labelCard').classList.remove('hidden');
+  document.getElementById('lblCode').textContent = label.label_code;
+  document.getElementById('lblStore').textContent = T('store')+': '+(label.customer_store||'-');
+  const badge = document.getElementById('lblBadge');
+  badge.className = 'badge ' + label.status;
+  badge.textContent = label.status;
+
+  const list = document.getElementById('itemsList');
+  list.innerHTML = '';
+  items.forEach(it=>{
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    const csText = (it.qty_cs===null || it.qty_cs===undefined)
+      ? `<span style="color:var(--red);">${T('noMuCsWarn')}</span>`
+      : `${T('csLabel')} ${it.qty_cs}`;
+    row.innerHTML = `
+      <input type="checkbox" class="chk" data-id="${it.id}" ${it.checked ? 'checked':''}>
+      <div class="meta">
+        <div class="name">${it.product_name||''}</div>
+        <div class="code">${it.product_code} · ${T('muLabel')} ${it.instruction_qty}</div>
+      </div>
+      <div class="qty">${csText}</div>
+    `;
+    list.appendChild(row);
+    row.querySelector('.chk').addEventListener('change', async (ev)=>{
+      const checked = ev.target.checked;
+      await sb.from('outbound_label_items').update({
+        checked, checked_qty: checked ? (it.qty_cs ?? it.instruction_qty) : null,
+        checked_by: currentEmp, checked_at: checked ? new Date().toISOString() : null
+      }).eq('id', it.id);
+      updateProgress();
+    });
+  });
+  updateProgress();
+}
+
+async function updateProgress(){
+  const boxes = document.querySelectorAll('#itemsList .chk');
+  const total = boxes.length;
+  const done = [...boxes].filter(b=>b.checked).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('lblProgressBar').style.width = pct + '%';
+  await sb.from('outbound_labels').update({
+    checked_items: done, status: done === 0 ? 'pending' : (done === total ? 'checking' : 'checking')
+  }).eq('label_code', currentLabel.label_code);
+}
+
+document.getElementById('finalizeBtn').addEventListener('click', ()=>{
+  showModal(T('finalizeConfirm'), async ()=>{
+    await sb.from('outbound_labels').update({
+      status: 'checked', checked_by: currentEmp, checked_at: new Date().toISOString()
+    }).eq('label_code', currentLabel.label_code);
+    toast(T('doneToast'));
+    closeLabelCard();
+  });
+});
+document.getElementById('closeLabelBtn').addEventListener('click', closeLabelCard);
+function closeLabelCard(){
+  document.getElementById('labelCard').classList.add('hidden');
+  document.getElementById('scanStartCard').classList.remove('hidden');
+  document.getElementById('manualCodeInput').value = '';
+  currentLabel = null;
+}
+
+/* ====================== Status (Outbound) ====================== */
+let statusFilter = 'all';
+document.querySelectorAll('.filterBtn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.filterBtn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    statusFilter = b.dataset.f;
+    loadStatusList();
+  });
+});
+
+async function loadStatusList(){
+  let q = sb.from('outbound_labels').select('*').order('imported_at', { ascending:false }).limit(200);
+  if(statusFilter === 'pending') q = q.neq('status','checked');
+  if(statusFilter === 'checked') q = q.eq('status','checked');
+  const { data, error } = await q;
+  const list = document.getElementById('statusList');
+  if(error){ list.innerHTML = 'Error: '+error.message; return; }
+  list.innerHTML = '';
+  (data||[]).forEach(l=>{
+    const card = document.createElement('div');
+    card.className = 'card status-card';
+    card.innerHTML = `
+      <div>
+        <div class="label-code">${l.label_code}</div>
+        <div style="font-size:13px;color:var(--muted);">${T('store')}: ${l.customer_store||'-'} · ${l.checked_items}/${l.total_items}</div>
+        ${l.status==='checked' ? `<div style="font-size:12px;color:var(--muted);">${T('checkedBy')}: ${l.checked_by||'-'}</div>` : ''}
+      </div>
+      <span class="badge ${l.status}">${l.status}</span>
+    `;
+    list.appendChild(card);
+  });
+}
+
+// Realtime: refresh status list when labels change
+sb.channel('labels-realtime')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'outbound_labels' }, ()=>{
+    if(!document.getElementById('view-status').classList.contains('hidden')) loadStatusList();
+  })
+  .subscribe();
+
+/* ====================== Import: Product Master ====================== */
+function chunk(arr, size){
+  const out = [];
+  for(let i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size));
+  return out;
+}
+document.getElementById('importProductBtn').addEventListener('click', async ()=>{
+  const file = document.getElementById('importProductFile').files[0];
+  const log = document.getElementById('importProductLog');
+  if(!file){ log.textContent = 'เลือกไฟล์ก่อน'; return; }
+  const btn = document.getElementById('importProductBtn');
+  btn.disabled = true;
+  log.textContent = T('importing');
+  try{
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if(!rows.length){ log.textContent = 'ไฟล์ไม่มีข้อมูล'; btn.disabled=false; return; }
+
+    function findKey(row, candidates){
+      const keys = Object.keys(row);
+      for(const c of candidates){
+        const k = keys.find(k=>k.trim().toLowerCase() === c.toLowerCase());
+        if(k) return k;
+      }
+      return null;
+    }
+    const kCode = findKey(rows[0], ['PRODUCT_CD']);
+    const kName = findKey(rows[0], ['PRODUCT_NM']);
+    const kNameEng = findKey(rows[0], ['PRODUCT_NM_ENG']);
+    const kMuCs = findKey(rows[0], ['MU_CS']);
+    if(!kCode || !kMuCs){
+      log.textContent = 'ไม่พบคอลัมน์ที่ต้องการ (PRODUCT_CD / MU_CS) — ตรวจชื่อหัวคอลัมน์ในไฟล์';
+      btn.disabled = false; return;
+    }
+
+    const products = rows.map(r => ({
+      product_code: normalizeId_(r[kCode]),
+      product_name: r[kName] || '',
+      product_name_eng: kNameEng ? (r[kNameEng] || '') : '',
+      mu_cs: Number(r[kMuCs]) || 1,
+      updated_at: new Date().toISOString()
+    })).filter(p => p.product_code);
+
+    const batches = chunk(products, 500);
+    let done = 0;
+    for(const b of batches){
+      const { error } = await sb.from('products').upsert(b, { onConflict: 'product_code' });
+      if(error){ log.textContent = 'Error: ' + error.message; btn.disabled=false; return; }
+      done += b.length;
+      log.textContent = `นำเข้าแล้ว ${done}/${products.length} รายการ...`;
+    }
+    log.textContent = `${T('importDone')}: ${products.length} รายการสินค้า`;
+    toast(T('importDone'));
+  }catch(err){
+    log.textContent = 'Error: ' + err.message;
+  }
+  btn.disabled = false;
+});
+
+/* ====================== Import: Outbound (A1) ====================== */
+document.getElementById('importBtn').addEventListener('click', async ()=>{
+  const file = document.getElementById('importFile').files[0];
+  const log = document.getElementById('importLog');
+  if(!file){ log.textContent = 'เลือกไฟล์ก่อน'; return; }
+  const btn = document.getElementById('importBtn');
+  btn.disabled = true;
+  log.textContent = T('importing');
+  try{
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+    // หา key คอลัมน์แบบยืดหยุ่น (ชื่อคอลัมน์จริงจาก WMS อาจมีช่องว่าง/ตัวพิมพ์ต่างกัน)
+    function findKey(row, candidates){
+      const keys = Object.keys(row);
+      for(const c of candidates){
+        const k = keys.find(k=>k.trim().toLowerCase() === c.toLowerCase());
+        if(k) return k;
+      }
+      return null;
+    }
+    if(!rows.length){ log.textContent = 'ไฟล์ไม่มีข้อมูล'; btn.disabled=false; return; }
+    const kLabel = findKey(rows[0], ['Outbound label(TOTE)','Outbound label']);
+    const kProduct = findKey(rows[0], ['Product']);
+    const kName = findKey(rows[0], ['Product Name']);
+    const kCustomer = findKey(rows[0], ['Customer']);
+    const kQty = findKey(rows[0], ['Instruction Tot Qty','Instruction Total Qty']);
+
+    if(!kLabel || !kProduct || !kQty){
+      log.textContent = 'ไม่พบคอลัมน์ที่ต้องการ (Outbound label(TOTE) / Product / Instruction Tot Qty) — ตรวจชื่อหัวคอลัมน์ในไฟล์';
+      btn.disabled = false; return;
+    }
+
+    // group by label
+    const byLabel = {};
+    rows.forEach(r=>{
+      const labelCode = normalizeId_(r[kLabel]);
+      if(!labelCode) return;
+      if(!byLabel[labelCode]) byLabel[labelCode] = { customer: r[kCustomer]||'', items: [] };
+      byLabel[labelCode].items.push({
+        product_code: normalizeId_(r[kProduct]),
+        product_name: r[kName]||'',
+        instruction_qty: Number(r[kQty])||0
+      });
+    });
+
+    const labelCodes = Object.keys(byLabel);
+
+    // ดึง MU_CS จาก Product Master มาคำนวณ Qty CS = Instruction Qty (MU) / MU_CS
+    const allProductCodes = [...new Set(rows.map(r => normalizeId_(r[kProduct])).filter(Boolean))];
+    const muCsMap = {};
+    for(const codes of chunk(allProductCodes, 300)){
+      const { data: prods, error: pErr } = await sb.from('products').select('product_code, mu_cs').in('product_code', codes);
+      if(pErr){ log.textContent = 'Error (products lookup): ' + pErr.message; btn.disabled=false; return; }
+      (prods||[]).forEach(p => { muCsMap[p.product_code] = p.mu_cs; });
+    }
+    let notFoundCount = 0;
+
+    log.textContent = `พบ ${labelCodes.length} Outbound label, ${rows.length} รายการสินค้า — กำลังนำเข้า...`;
+
+    let done = 0;
+    for(const code of labelCodes){
+      const g = byLabel[code];
+      // upsert label header
+      await sb.from('outbound_labels').upsert({
+        label_code: code,
+        customer_store: g.customer,
+        total_items: g.items.length,
+        checked_items: 0,
+        status: 'pending',
+        imported_at: new Date().toISOString(),
+        imported_batch: file.name
+      }, { onConflict: 'label_code' });
+      // clear old items for this label then insert fresh (idempotent re-import)
+      await sb.from('outbound_label_items').delete().eq('label_code', code);
+      const rowsToInsert = g.items.map(it => {
+        const muCs = muCsMap[it.product_code];
+        if(muCs === undefined) notFoundCount++;
+        return {
+          label_code: code,
+          ...it,
+          mu_cs: muCs ?? null,
+          qty_cs: (muCs && muCs > 0) ? +(it.instruction_qty / muCs).toFixed(2) : null
+        };
+      });
+      await sb.from('outbound_label_items').insert(rowsToInsert);
+      done++;
+      log.textContent = `นำเข้าแล้ว ${done}/${labelCodes.length} ใบ...`;
+    }
+    log.textContent = `${T('importDone')}: ${labelCodes.length} Outbound label, ${rows.length} รายการสินค้า`
+      + (notFoundCount ? `\n⚠ ${notFoundCount} รายการไม่พบใน Product Master (เช็คด้วยตนเอง)` : '');
+    toast(T('importDone'));
+  }catch(err){
+    log.textContent = 'Error: ' + err.message;
+  }
+  btn.disabled = false;
+});
+
+/* ====================== Init ====================== */
+applyI18n();
+if(EMP_RE.test(currentEmp)){ showApp(); loadStatusList(); } else { showLogin(); }
+</script>
+</body>
+</html>

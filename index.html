@@ -414,7 +414,7 @@ const DICT = {
     trRemain:"ยังไม่มีชื่อพม่าอีก", trNone:"สินค้าทุกตัวมีชื่อพม่าแล้ว", trRunning:"กำลังแปล...",
     adminTitle:"ลบข้อมูล Outbound ทั้งหมด (Admin)", adminDesc:"ลบใบ Outbound และรายการสินค้าที่ import จาก Lois ทั้งหมด (Product Master ไม่ถูกลบ) กรอกเลขพนักงาน Admin แล้วกดลบ",
     btnDeleteAll:"ลบทั้งหมด", delTypeHint:"เลขพนักงาน Admin", delNeedWord:"กรอกเลขพนักงาน Admin ก่อน",
-    delConfirm:"ยืนยันลบข้อมูล Outbound ทั้งหมด? ย้อนกลับไม่ได้", delDone:"ลบข้อมูลแล้ว", delDenied:"เลขพนักงานนี้ไม่มีสิทธิ์ลบ", btnLoisPull:"ดึงจาก Lois (ย้อนหลัง 7 วัน)", orUploadFile:"หรืออัปโหลดไฟล์ที่ Export จาก Lois เอง",
+    delConfirm:"ยืนยันลบข้อมูล Outbound ทั้งหมด? ย้อนกลับไม่ได้", delDone:"ลบข้อมูลแล้ว", delDenied:"เลขพนักงานนี้ไม่มีสิทธิ์ลบ", btnLoisPull:"ดึงจาก Lois (ย้อนหลัง 7 วัน)", noStore:"ใบนี้ไม่มีเลข Store — พิมพ์ไม่ได้ ตรวจข้อมูลใน Lois แล้ว import ใหม่", orUploadFile:"หรืออัปโหลดไฟล์ที่ Export จาก Lois เอง",
     loisPulling:"กำลังล็อกอินและดึงข้อมูลจาก Lois...", loisPulled:"ดึงจาก Lois", loisRows:"แถว", loisFail:"ดึงจาก Lois ไม่สำเร็จ", loisCached:"ใช้ผลที่ดึงไว้เมื่อไม่ถึง 1 นาทีก่อน",
     impNew:"ใบใหม่", impUpdated:"อัปเดตใบที่ยังไม่เช็ค", impSkipped:"ข้ามใบที่เริ่มเช็คแล้ว", impItems:"รายการสินค้า",
     impNoMu:"รายการไม่พบใน Product Master (เช็คด้วยตนเอง)", impFailed:"ใบ import ไม่สำเร็จ", excelSaved:"ดาวน์โหลด Excel แล้ว", impSaving:"กำลังบันทึก...", colCheckedAt:"เวลาเช็ค", printLayout:"รูปแบบใบพิมพ์", orientLand:"แนวนอน", orientPort:"แนวตั้ง"
@@ -452,7 +452,7 @@ const DICT = {
     trRemain:"Still without Burmese name", trNone:"All products have Burmese names", trRunning:"Translating...",
     adminTitle:"Delete all Outbound data (Admin)", adminDesc:"Deletes all Outbound labels and items imported from Lois (Product Master is kept). Enter the admin employee ID, then press delete",
     btnDeleteAll:"Delete all", delTypeHint:"Admin employee ID", delNeedWord:"Enter the admin employee ID first",
-    delConfirm:"Delete ALL Outbound data? This cannot be undone", delDone:"Data deleted", delDenied:"This employee ID is not allowed to delete", btnLoisPull:"Pull from Lois (last 7 days)", orUploadFile:"or upload a file exported from Lois",
+    delConfirm:"Delete ALL Outbound data? This cannot be undone", delDone:"Data deleted", delDenied:"This employee ID is not allowed to delete", btnLoisPull:"Pull from Lois (last 7 days)", noStore:"This label has no Store number — cannot print. Check Lois and re-import", orUploadFile:"or upload a file exported from Lois",
     loisPulling:"Logging in and pulling data from Lois...", loisPulled:"Pulled from Lois", loisRows:"rows", loisFail:"Pull from Lois failed", loisCached:"Using the result pulled less than 1 minute ago",
     impNew:"New labels", impUpdated:"Updated (not started)", impSkipped:"Skipped (check already started)", impItems:"items",
     impNoMu:"item(s) not in Product Master (check manually)", impFailed:"label(s) failed to import", excelSaved:"Excel downloaded", impSaving:"Saving...", colCheckedAt:"Checked at", printLayout:"Print layout", orientLand:"Landscape", orientPort:"Portrait"
@@ -490,7 +490,7 @@ const DICT = {
     trRemain:"မြန်မာအမည် မရှိသေး", trNone:"ပစ္စည်းအားလုံး မြန်မာအမည် ရှိပြီး", trRunning:"ဘာသာပြန်နေသည်...",
     adminTitle:"Outbound ဒေတာအားလုံး ဖျက်ရန် (Admin)", adminDesc:"Lois မှ သွင်းထားသော Outbound ဒေတာအားလုံး ဖျက်မည် (Product Master မဖျက်ပါ) Admin ဝန်ထမ်းနံပါတ် ထည့်ပြီး ဖျက်ပါ",
     btnDeleteAll:"အားလုံးဖျက်ရန်", delTypeHint:"Admin ဝန်ထမ်းနံပါတ်", delNeedWord:"Admin ဝန်ထမ်းနံပါတ် အရင်ထည့်ပါ",
-    delConfirm:"Outbound ဒေတာအားလုံး ဖျက်မည်လား? ပြန်ယူ၍မရပါ", delDone:"ဖျက်ပြီးပါပြီ", delDenied:"ဤဝန်ထမ်းနံပါတ်ဖြင့် ဖျက်ခွင့်မရှိပါ", btnLoisPull:"Lois မှ ဆွဲယူရန် (နောက်ကြောင်း ၇ ရက်)", orUploadFile:"သို့မဟုတ် Lois မှ Export ဖိုင်ကို တင်ပါ",
+    delConfirm:"Outbound ဒေတာအားလုံး ဖျက်မည်လား? ပြန်ယူ၍မရပါ", delDone:"ဖျက်ပြီးပါပြီ", delDenied:"ဤဝန်ထမ်းနံပါတ်ဖြင့် ဖျက်ခွင့်မရှိပါ", btnLoisPull:"Lois မှ ဆွဲယူရန် (နောက်ကြောင်း ၇ ရက်)", noStore:"ဤလေဘယ်တွင် Store နံပါတ် မရှိပါ — ပရင့်ထုတ်၍မရပါ", orUploadFile:"သို့မဟုတ် Lois မှ Export ဖိုင်ကို တင်ပါ",
     loisPulling:"Lois သို့ ဝင်ရောက်ပြီး ဒေတာဆွဲယူနေသည်...", loisPulled:"Lois မှ ဆွဲယူပြီး", loisRows:"တန်း", loisFail:"Lois မှ ဆွဲယူ၍မရပါ", loisCached:"၁ မိနစ်အတွင်း ဆွဲထားသော ရလဒ်ကို သုံးသည်",
     impNew:"လေဘယ်အသစ်", impUpdated:"ပြင်ဆင်ပြီး (မစစ်ရသေး)", impSkipped:"ကျော်ခဲ့သည် (စစ်ဆေးပြီး/စစ်နေ)", impItems:"ပစ္စည်း",
     impNoMu:"Product Master တွင် မရှိ (ကိုယ်တိုင်စစ်ပါ)", impFailed:"လေဘယ် သွင်း၍မရ", excelSaved:"Excel ဒေါင်းလုဒ်ပြီး", impSaving:"သိမ်းနေသည်...", colCheckedAt:"စစ်ဆေးချိန်", printLayout:"ပရင့်ပုံစံ", orientLand:"အလျားလိုက်", orientPort:"ဒေါင်လိုက်"
@@ -861,6 +861,8 @@ orientSel.addEventListener('change', ()=>{
 
 document.getElementById('printBtn').addEventListener('click', ()=>{
   if(!currentLabel){ return; }
+  const storeNo = String(currentLabel.customer_store || '').trim();
+  if(!storeNo){ toast(T('noStore')); return; }   // ไม่มีเลข Store = ออกจาก DC ไม่ได้ ห้ามพิมพ์
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-GB') + ', ' + now.toLocaleTimeString('en-GB');
   const rows = currentItems.map(it => `
@@ -884,7 +886,7 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
           <tr><th>Center Code(BU) :</th><td>${esc_(lc.slice(1, 4))}</td></tr>
           <tr><th>Label Type :</th><td>Outbound</td></tr>
           <tr><th>Label Number :</th><td>${esc_(lc)}</td></tr>
-          <tr><th>Store :</th><td>${esc_(currentLabel.customer_store || '-')}</td></tr>
+          <tr><th>Store :</th><td>${esc_(storeNo)}</td></tr>
         </table>
       </div>
     </div>`;
@@ -893,8 +895,8 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
       <div class="ps-head">
         <div class="ps-id">
           <div class="ps-code">${esc_(currentLabel.label_code)}</div>
-          <div class="ps-store">${esc_(currentLabel.customer_store || '-')}</div>
-          <div class="ps-store-qr">${labelQrSvg_(currentLabel.label_code)}</div>
+          <div class="ps-store">${esc_(storeNo)}</div>
+          <div class="ps-store-qr">${labelQrSvg_(storeNo)}</div>
         </div>
         <div class="ps-meta">${dateStr}</div>
         <div class="ps-photo">${photo}</div>

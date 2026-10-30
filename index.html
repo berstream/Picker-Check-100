@@ -151,16 +151,23 @@
     html,body{background:#fff !important;}
   }
   .ps-wrap{font-family:'TH Sarabun New','Sarabun','Noto Sans Myanmar',sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  .ps-head{display:grid;grid-template-columns:40% 1fr 190px;border:2px solid #000;align-items:stretch;}
+  .ps-head{display:grid;grid-template-columns:34% 1fr 330px;border:2px solid #000;align-items:stretch;}
   .ps-id{border-right:2px solid #000;text-align:center;}
   .ps-code{font-family:var(--mono);font-size:22px;font-weight:700;padding:4px 6px;background:#eee;border-bottom:1px solid #000;}
   .ps-store{font-size:24px;font-weight:700;padding:2px 6px;}
   .ps-store-qr{padding:2px 6px 6px;line-height:0;}
   .ps-store-qr svg{width:26mm;height:26mm;}
   .ps-meta{display:flex;align-items:flex-end;justify-content:center;font-size:16px;font-weight:700;padding:6px;}
-  .ps-photo{border-left:2px solid #000;display:flex;align-items:center;justify-content:center;padding:4px;}
-  .ps-photo img{max-width:180px;max-height:96px;display:block;}
-  .ps-photo svg{width:84px;height:84px;display:block;}
+  .ps-photo{border-left:2px solid #000;display:flex;align-items:center;justify-content:center;padding:6px;}
+  /* มุมขวา: จำลองสติกเกอร์ OUTBOUND LABEL ของ Lois */
+  .ob-lbl{width:100%;border:2px solid #000;font-family:Arial,Helvetica,sans-serif;color:#000;}
+  .ob-title{background:#000;color:#fff;text-align:center;font-weight:700;font-size:20px;letter-spacing:.5px;padding:2px 0;}
+  .ob-body{display:flex;align-items:center;gap:10px;padding:6px 8px;}
+  .ob-qr{line-height:0;flex:0 0 auto;}
+  .ob-qr svg{width:84px;height:84px;display:block;}
+  table.ob-info{border-collapse:collapse;font-size:11px;}
+  table.ob-info th{text-align:left;font-weight:700;padding:1px 10px 1px 0;white-space:nowrap;}
+  table.ob-info td{padding:1px 0;white-space:nowrap;}
   table.ps-table{width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed;}
   table.ps-table th{background:#2f5f4f;color:#fff;font-size:15px;font-weight:700;padding:5px 4px;border:1px solid #000;text-align:center;}
   table.ps-table td{border:1px solid #000;padding:3px 6px;font-size:14px;vertical-align:middle;word-wrap:break-word;}
@@ -865,7 +872,22 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
       <td class="c"><span class="box"></span></td>
       <td></td>
     </tr>`).join('');
-  const photo = labelPhotoUrl ? `<img src="${labelPhotoUrl}" alt="">` : labelQrSvg_(currentLabel.label_code);
+  // มุมขวา: วาดสติกเกอร์ OUTBOUND LABEL ทุกครั้ง (Center Code = ตัวที่ 2-4 ของเลข Label เช่น O847… → 847)
+  const lc = currentLabel.label_code || '';
+  const photo = `
+    <div class="ob-lbl">
+      <div class="ob-title">OUTBOUND LABEL</div>
+      <div class="ob-body">
+        <div class="ob-qr">${labelQrSvg_(lc)}</div>
+        <table class="ob-info">
+          <tr><th>Project :</th><td></td></tr>
+          <tr><th>Center Code(BU) :</th><td>${esc_(lc.slice(1, 4))}</td></tr>
+          <tr><th>Label Type :</th><td>Outbound</td></tr>
+          <tr><th>Label Number :</th><td>${esc_(lc)}</td></tr>
+          <tr><th>Store :</th><td>${esc_(currentLabel.customer_store || '-')}</td></tr>
+        </table>
+      </div>
+    </div>`;
   document.getElementById('printSheet').innerHTML = `
     <div class="ps-wrap">
       <div class="ps-head">

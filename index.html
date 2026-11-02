@@ -73,6 +73,9 @@
   .item-table .mu{font-family:var(--mono);font-size:11px;color:var(--muted);}
   .item-table .cs{font-weight:700;font-size:17px;text-align:center;white-space:nowrap;color:var(--blue-d);}
   .item-table .warn{color:var(--red);font-size:12px;font-weight:600;}
+  .label-sync{font-size:12px;color:var(--muted);margin-top:4px;}
+  .label-sync.bad{color:var(--red);font-weight:600;}
+  #labelCard.syncing #itemsList, #labelCard.syncing #chkAll{pointer-events:none;opacity:.45;}
   .chk{width:24px;height:24px;accent-color:var(--green);}
   .badge{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;font-size:11.5px;font-weight:600;}
   .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
@@ -245,6 +248,7 @@
           <div>
             <div class="label-code" id="lblCode"></div>
             <div class="label-sub" id="lblStore"></div>
+            <div class="label-sync" id="lblSync"></div>
           </div>
           <div style="text-align:right;">
             <span class="badge" id="lblBadge"></span>
@@ -414,7 +418,7 @@ const DICT = {
     trRemain:"ยังไม่มีชื่อพม่าอีก", trNone:"สินค้าทุกตัวมีชื่อพม่าแล้ว", trRunning:"กำลังแปล...",
     adminTitle:"ลบข้อมูล Outbound ทั้งหมด (Admin)", adminDesc:"ลบใบ Outbound และรายการสินค้าที่ import จาก Lois ทั้งหมด (Product Master ไม่ถูกลบ) กรอกเลขพนักงาน Admin แล้วกดลบ",
     btnDeleteAll:"ลบทั้งหมด", delTypeHint:"เลขพนักงาน Admin", delNeedWord:"กรอกเลขพนักงาน Admin ก่อน",
-    delConfirm:"ยืนยันลบข้อมูล Outbound ทั้งหมด? ย้อนกลับไม่ได้", delDone:"ลบข้อมูลแล้ว", delDenied:"เลขพนักงานนี้ไม่มีสิทธิ์ลบ", btnLoisPull:"ดึงจาก Lois (ย้อนหลัง 7 วัน)", noStore:"ใบนี้ไม่มีเลข Store — พิมพ์ไม่ได้ ตรวจข้อมูลใน Lois แล้ว import ใหม่", orUploadFile:"หรืออัปโหลดไฟล์ที่ Export จาก Lois เอง",
+    delConfirm:"ยืนยันลบข้อมูล Outbound ทั้งหมด? ย้อนกลับไม่ได้", delDone:"ลบข้อมูลแล้ว", delDenied:"เลขพนักงานนี้ไม่มีสิทธิ์ลบ", btnLoisPull:"ดึงจาก Lois (ย้อนหลัง 7 วัน)", loisSyncing:"กำลังเช็คข้อมูลล่าสุดจาก Lois...", loisSyncAt:"อัปเดตจาก Lois เมื่อ", loisSyncFail:"เชื่อม Lois ไม่ได้ — ข้อมูลอาจไม่ล่าสุด", loisSyncNone:"ไม่พบใบนี้ใน Lois (Work Date 7 วัน) — ใช้ข้อมูลที่ import ไว้", loisAdded:"Lois มีรายการเพิ่ม {n} รายการ — ต้องเช็คเพิ่ม", loisRemoved:"{n} รายการไม่อยู่ใน Lois แล้ว", noStore:"ใบนี้ไม่มีเลข Store — พิมพ์ไม่ได้ ตรวจข้อมูลใน Lois แล้ว import ใหม่", orUploadFile:"หรืออัปโหลดไฟล์ที่ Export จาก Lois เอง",
     loisPulling:"กำลังล็อกอินและดึงข้อมูลจาก Lois...", loisPulled:"ดึงจาก Lois", loisRows:"แถว", loisFail:"ดึงจาก Lois ไม่สำเร็จ", loisCached:"ใช้ผลที่ดึงไว้เมื่อไม่ถึง 1 นาทีก่อน",
     impNew:"ใบใหม่", impUpdated:"อัปเดตใบที่ยังไม่เช็ค", impSkipped:"ข้ามใบที่เริ่มเช็คแล้ว", impItems:"รายการสินค้า",
     impNoMu:"รายการไม่พบใน Product Master (เช็คด้วยตนเอง)", impFailed:"ใบ import ไม่สำเร็จ", excelSaved:"ดาวน์โหลด Excel แล้ว", impSaving:"กำลังบันทึก...", colCheckedAt:"เวลาเช็ค", printLayout:"รูปแบบใบพิมพ์", orientLand:"แนวนอน", orientPort:"แนวตั้ง"
@@ -452,7 +456,7 @@ const DICT = {
     trRemain:"Still without Burmese name", trNone:"All products have Burmese names", trRunning:"Translating...",
     adminTitle:"Delete all Outbound data (Admin)", adminDesc:"Deletes all Outbound labels and items imported from Lois (Product Master is kept). Enter the admin employee ID, then press delete",
     btnDeleteAll:"Delete all", delTypeHint:"Admin employee ID", delNeedWord:"Enter the admin employee ID first",
-    delConfirm:"Delete ALL Outbound data? This cannot be undone", delDone:"Data deleted", delDenied:"This employee ID is not allowed to delete", btnLoisPull:"Pull from Lois (last 7 days)", noStore:"This label has no Store number — cannot print. Check Lois and re-import", orUploadFile:"or upload a file exported from Lois",
+    delConfirm:"Delete ALL Outbound data? This cannot be undone", delDone:"Data deleted", delDenied:"This employee ID is not allowed to delete", btnLoisPull:"Pull from Lois (last 7 days)", loisSyncing:"Checking latest data from Lois...", loisSyncAt:"Updated from Lois at", loisSyncFail:"Cannot reach Lois — data may be out of date", loisSyncNone:"Not found in Lois (Work Date 7 days) — using imported data", loisAdded:"Lois has {n} new/changed item(s) — check them", loisRemoved:"{n} item(s) no longer in Lois", noStore:"This label has no Store number — cannot print. Check Lois and re-import", orUploadFile:"or upload a file exported from Lois",
     loisPulling:"Logging in and pulling data from Lois...", loisPulled:"Pulled from Lois", loisRows:"rows", loisFail:"Pull from Lois failed", loisCached:"Using the result pulled less than 1 minute ago",
     impNew:"New labels", impUpdated:"Updated (not started)", impSkipped:"Skipped (check already started)", impItems:"items",
     impNoMu:"item(s) not in Product Master (check manually)", impFailed:"label(s) failed to import", excelSaved:"Excel downloaded", impSaving:"Saving...", colCheckedAt:"Checked at", printLayout:"Print layout", orientLand:"Landscape", orientPort:"Portrait"
@@ -490,7 +494,7 @@ const DICT = {
     trRemain:"မြန်မာအမည် မရှိသေး", trNone:"ပစ္စည်းအားလုံး မြန်မာအမည် ရှိပြီး", trRunning:"ဘာသာပြန်နေသည်...",
     adminTitle:"Outbound ဒေတာအားလုံး ဖျက်ရန် (Admin)", adminDesc:"Lois မှ သွင်းထားသော Outbound ဒေတာအားလုံး ဖျက်မည် (Product Master မဖျက်ပါ) Admin ဝန်ထမ်းနံပါတ် ထည့်ပြီး ဖျက်ပါ",
     btnDeleteAll:"အားလုံးဖျက်ရန်", delTypeHint:"Admin ဝန်ထမ်းနံပါတ်", delNeedWord:"Admin ဝန်ထမ်းနံပါတ် အရင်ထည့်ပါ",
-    delConfirm:"Outbound ဒေတာအားလုံး ဖျက်မည်လား? ပြန်ယူ၍မရပါ", delDone:"ဖျက်ပြီးပါပြီ", delDenied:"ဤဝန်ထမ်းနံပါတ်ဖြင့် ဖျက်ခွင့်မရှိပါ", btnLoisPull:"Lois မှ ဆွဲယူရန် (နောက်ကြောင်း ၇ ရက်)", noStore:"ဤလေဘယ်တွင် Store နံပါတ် မရှိပါ — ပရင့်ထုတ်၍မရပါ", orUploadFile:"သို့မဟုတ် Lois မှ Export ဖိုင်ကို တင်ပါ",
+    delConfirm:"Outbound ဒေတာအားလုံး ဖျက်မည်လား? ပြန်ယူ၍မရပါ", delDone:"ဖျက်ပြီးပါပြီ", delDenied:"ဤဝန်ထမ်းနံပါတ်ဖြင့် ဖျက်ခွင့်မရှိပါ", btnLoisPull:"Lois မှ ဆွဲယူရန် (နောက်ကြောင်း ၇ ရက်)", loisSyncing:"Lois မှ နောက်ဆုံးဒေတာ စစ်နေသည်...", loisSyncAt:"Lois မှ အပ်ဒိတ်ချိန်", loisSyncFail:"Lois နှင့် ချိတ်မရပါ — ဒေတာ နောက်ဆုံးမဟုတ်နိုင်", loisSyncNone:"Lois တွင် မတွေ့ပါ — သွင်းထားသောဒေတာကို သုံးသည်", loisAdded:"Lois တွင် ပစ္စည်း {n} ခု ထပ်ပါ — ထပ်စစ်ပါ", loisRemoved:"{n} ခု Lois တွင် မရှိတော့ပါ", noStore:"ဤလေဘယ်တွင် Store နံပါတ် မရှိပါ — ပရင့်ထုတ်၍မရပါ", orUploadFile:"သို့မဟုတ် Lois မှ Export ဖိုင်ကို တင်ပါ",
     loisPulling:"Lois သို့ ဝင်ရောက်ပြီး ဒေတာဆွဲယူနေသည်...", loisPulled:"Lois မှ ဆွဲယူပြီး", loisRows:"တန်း", loisFail:"Lois မှ ဆွဲယူ၍မရပါ", loisCached:"၁ မိနစ်အတွင်း ဆွဲထားသော ရလဒ်ကို သုံးသည်",
     impNew:"လေဘယ်အသစ်", impUpdated:"ပြင်ဆင်ပြီး (မစစ်ရသေး)", impSkipped:"ကျော်ခဲ့သည် (စစ်ဆေးပြီး/စစ်နေ)", impItems:"ပစ္စည်း",
     impNoMu:"Product Master တွင် မရှိ (ကိုယ်တိုင်စစ်ပါ)", impFailed:"လေဘယ် သွင်း၍မရ", excelSaved:"Excel ဒေါင်းလုဒ်ပြီး", impSaving:"သိမ်းနေသည်...", colCheckedAt:"စစ်ဆေးချိန်", printLayout:"ပရင့်ပုံစံ", orientLand:"အလျားလိုက်", orientPort:"ဒေါင်လိုက်"
@@ -659,11 +663,150 @@ function statusText(st){
   return T({pending:'stPending', checking:'stChecking', checked:'stChecked', returned:'stReturned'}[st] || 'stPending');
 }
 
+/* ---- สแกนใบ: โชว์ข้อมูลในระบบทันที แล้วเช็คกับ Lois ล่าสุด (ล็อกการติ๊ก/พิมพ์ระหว่างรอ) ---- */
+let lookupSeq_ = 0;
+let syncBusy_ = false;
+
 async function lookupLabel(labelCode, photoUrl){
+  const seq = ++lookupSeq_;
+  const shown = await loadLabel_(labelCode, photoUrl);
+  if(seq !== lookupSeq_) return;
+  setSyncBusy_(true);
+  if(!shown) toast(T('loisSyncing'));
+  const r = await syncFromLois_(labelCode);
+  if(seq !== lookupSeq_) return;          // ระหว่างรอ ผู้ใช้ปิด/เปิดใบอื่นไปแล้ว
+  setSyncBusy_(false);
+  if(r.changed || !shown){
+    const ok = await loadLabel_(labelCode, shown ? labelPhotoUrl : photoUrl);
+    if(seq !== lookupSeq_) return;
+    if(!ok){ toast(T('notFound')); return; }
+  }
+  showSyncInfo_(r);
+  if(r.added) toast(T('loisAdded').replace('{n}', r.added));
+}
+
+function setSyncBusy_(on){
+  syncBusy_ = on;
+  document.getElementById('labelCard').classList.toggle('syncing', on);
+  const el = document.getElementById('lblSync');
+  if(on){ el.className = 'label-sync'; el.textContent = T('loisSyncing'); }
+  if(currentLabel) refreshResultsUI();
+}
+
+function showSyncInfo_(r){
+  const el = document.getElementById('lblSync');
+  el.className = 'label-sync' + (r.state === 'ok' ? '' : ' bad');
+  if(r.state === 'ok'){
+    el.textContent = `${T('loisSyncAt')} ${r.at}`
+      + (r.added ? ' · ' + T('loisAdded').replace('{n}', r.added) : '')
+      + (r.removed ? ' · ' + T('loisRemoved').replace('{n}', r.removed) : '');
+    if(r.added || r.removed) el.className = 'label-sync bad';
+  } else {
+    el.textContent = r.state === 'none' ? T('loisSyncNone') : T('loisSyncFail');
+  }
+}
+
+const lineKey_ = (code, qty) => normalizeId_(code) + '|' + Number(qty || 0);
+function sameLines_(dbItems, recs){
+  const a = (dbItems || []).map(i => lineKey_(i.product_code, i.instruction_qty)).sort();
+  const b = recs.map(r => lineKey_(r.product, r.qty)).sort();
+  return a.length === b.length && a.every((k, i) => k === b[i]);
+}
+
+// คืน { state:'ok'|'none'|'fail', at, changed, added, removed }
+async function syncFromLois_(labelCode){
+  if(!GAS_URL) return { state: 'fail' };
+  let j;
+  try{
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 20000);
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'loisLabel', box: labelCode }),
+      signal: ctl.signal
+    });
+    clearTimeout(timer);
+    j = await res.json();
+  }catch(e){ return { state: 'fail', error: e.message }; }
+  if(!j || !j.ok) return { state: 'fail', error: j && j.error };
+  const rows = (j.rows || []).filter(r => normalizeLabelCode_(r.BOX_NO) === labelCode);
+  if(!rows.length) return { state: 'none' };
+  const recs = rows.map(r => ({ label: r.BOX_NO, product: r.SKU_CD, name: r.CNNT, customer: r.CLNT_CD, qty: r.QTY }));
+  try{
+    const { data: label, error: eL } = await sb.from('outbound_labels').select('label_code, status').eq('label_code', labelCode).maybeSingle();
+    if(eL) throw eL;
+    // ใบใหม่ / ยังไม่เริ่มเช็ค: แทนรายการด้วยข้อมูล Lois (เหมือน import)
+    if(!label || !STARTED_STATUSES.includes(label.status)){
+      if(label){
+        const { data: cur, error: eC } = await sb.from('outbound_label_items').select('product_code, instruction_qty').eq('label_code', labelCode);
+        if(eC) throw eC;
+        if(sameLines_(cur, recs)) return { state: 'ok', at: j.at, changed: false };
+      }
+      const sum = await importOutboundRows_(recs, 'LOIS-SCAN ' + j.at, null);
+      if(sum.failed.length) return { state: 'fail', error: sum.failed[0] };
+      return { state: 'ok', at: j.at, changed: true };
+    }
+    return await mergeStartedLabel_(labelCode, label.status, recs, j.at);
+  }catch(e){ return { state: 'fail', error: e.message }; }
+}
+
+// ใบที่เริ่มเช็ค/ครบแล้ว: เก็บผลเดิม เพิ่มเฉพาะรายการใหม่ (จำนวนเปลี่ยน = ต้องเช็คใหม่)
+// ใบ "ครบแล้ว" ที่มีรายการเพิ่ม → กลับเป็น "รอเช็ค"
+async function mergeStartedLabel_(labelCode, status, recs, at){
+  const { data: cur, error } = await sb.from('outbound_label_items').select('id, product_code, instruction_qty').eq('label_code', labelCode);
+  if(error) throw error;
+  const free = [...(cur || [])];
+  const unmatched = [];
+  recs.forEach(r => {
+    const l = { product_code: normalizeId_(r.product), product_name: r.name || '', instruction_qty: Number(r.qty) || 0 };
+    const i = free.findIndex(c => normalizeId_(c.product_code) === l.product_code && Number(c.instruction_qty) === l.instruction_qty);
+    if(i >= 0) free.splice(i, 1); else unmatched.push(l);
+  });
+  const qtyChanged = [], added = [];
+  unmatched.forEach(l => {
+    const i = free.findIndex(c => normalizeId_(c.product_code) === l.product_code);
+    if(i >= 0){ qtyChanged.push({ id: free[i].id, l }); free.splice(i, 1); }
+    else added.push(l);
+  });
+  const removed = free.length;
+  if(!added.length && !qtyChanged.length) return { state: 'ok', at, changed: false, removed };
+
+  const muMap = {};
+  const codes = [...new Set([...added, ...qtyChanged.map(x => x.l)].map(l => l.product_code))];
+  const { data: ps } = await sb.from('products').select('product_code, mu_cs').in('product_code', codes);
+  (ps || []).forEach(p => { muMap[p.product_code] = p.mu_cs; });
+  const cs = l => { const mu = muMap[l.product_code];
+    return { mu_cs: mu ?? null, qty_cs: (mu && mu > 0) ? +(l.instruction_qty / mu).toFixed(2) : null }; };
+
+  for(const x of qtyChanged){
+    const { error: eU } = await sb.from('outbound_label_items').update({
+      instruction_qty: x.l.instruction_qty, ...cs(x.l), result: null, checked: false, checked_at: null
+    }).eq('id', x.id);
+    if(eU) throw eU;
+  }
+  if(added.length){
+    const { error: eI } = await sb.from('outbound_label_items').insert(added.map(l => ({ label_code: labelCode, ...l, ...cs(l) })));
+    if(eI) throw eI;
+  }
+  const { data: after, error: eA } = await sb.from('outbound_label_items').select('result').eq('label_code', labelCode);
+  if(eA) throw eA;
+  const { error: eH } = await sb.from('outbound_labels').update({
+    total_items: after.length,
+    checked_items: after.filter(i => i.result === 'ok').length,
+    short_items: after.filter(i => i.result === 'short').length,
+    status: status === 'checked' ? 'pending' : status
+  }).eq('label_code', labelCode);
+  if(eH) throw eH;
+  return { state: 'ok', at, changed: true, added: added.length + qtyChanged.length, removed };
+}
+
+// โหลดใบจากระบบแล้วแสดง — คืน false ถ้าไม่พบ
+async function loadLabel_(labelCode, photoUrl){
   const { data: label, error: e1 } = await sb.from('outbound_labels').select('*').eq('label_code', labelCode).maybeSingle();
-  if(e1 || !label){ toast(T('notFound')); return; }
+  if(e1 || !label) return false;
   const { data: items, error: e2 } = await sb.from('outbound_label_items').select('*').eq('label_code', labelCode).order('created_at');
-  if(e2){ toast('Error: '+e2.message); return; }
+  if(e2){ toast('Error: '+e2.message); return false; }
   const list = items || [];
 
   // ชื่อ ไทย / อังกฤษ / พม่า ดึงสดจาก Product Master (ได้ชื่อพม่าที่แปลทีหลังด้วย)
@@ -697,6 +840,7 @@ async function lookupLabel(labelCode, photoUrl){
   currentItems = list;
   startedChecking = false;
   renderLabelCard();
+  return true;
 }
 
 function renderLabelCard(){
@@ -781,7 +925,7 @@ function refreshResultsUI(){
     <span class="s-short">${T('sumShort')} <b>${short}</b></span>
     <span>${T('sumTodo')} <b>${todo}</b></span>
     <span style="margin-left:auto;"><b>${total}</b> ${T('totalItems')} · ${T('totalCs')} <b>${sumCs_(currentItems)}</b></span>`;
-  document.getElementById('saveResultBtn').disabled = total === 0 || todo > 0;
+  document.getElementById('saveResultBtn').disabled = syncBusy_ || total === 0 || todo > 0;
 }
 
 // แจ้งแท็บสถานะว่ากำลังเช็คใบนี้ (เฉพาะใบที่ยังไม่เช็ค / ส่งกลับ Picking)
@@ -823,6 +967,9 @@ document.getElementById('saveResultBtn').addEventListener('click', async ()=>{
 
 document.getElementById('closeLabelBtn').addEventListener('click', closeLabelCard);
 function closeLabelCard(){
+  lookupSeq_++;               // ยกเลิกการเช็ค Lois ที่ค้างอยู่ของใบนี้
+  setSyncBusy_(false);
+  document.getElementById('lblSync').textContent = '';
   clearQrPreview();
   if(labelPhotoUrl) URL.revokeObjectURL(labelPhotoUrl);
   labelPhotoUrl = null;
@@ -861,6 +1008,7 @@ orientSel.addEventListener('change', ()=>{
 
 document.getElementById('printBtn').addEventListener('click', ()=>{
   if(!currentLabel){ return; }
+  if(syncBusy_){ toast(T('loisSyncing')); return; }   // รอข้อมูลล่าสุดจาก Lois ก่อน
   const storeNo = String(currentLabel.customer_store || '').trim();
   if(!storeNo){ toast(T('noStore')); return; }   // ไม่มีเลข Store = ออกจาก DC ไม่ได้ ห้ามพิมพ์
   const now = new Date();

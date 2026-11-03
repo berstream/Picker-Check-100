@@ -74,6 +74,8 @@
   .item-table .cs{font-weight:700;font-size:17px;text-align:center;white-space:nowrap;color:var(--blue-d);}
   .item-table .warn{color:var(--red);font-size:12px;font-weight:600;}
   .label-sync{font-size:12px;color:var(--muted);margin-top:4px;}
+  .data-age{font-size:13px;color:var(--muted);background:var(--bg);border-radius:10px;padding:8px 12px;margin-bottom:12px;}
+  .data-age.old{color:#fff;background:var(--red);font-weight:600;}
   .label-sync.bad{color:var(--red);font-weight:600;}
   #labelCard.syncing #itemsList, #labelCard.syncing #chkAll{pointer-events:none;opacity:.45;}
   .chk{width:24px;height:24px;accent-color:var(--green);}
@@ -224,6 +226,7 @@
     <!-- SCAN & CHECK -->
     <section id="view-scan">
       <div class="card" id="scanStartCard">
+        <div class="data-age" id="dataAge"></div>
         <button class="btn" id="startScanBtn" data-i18n="btnStartScan">เปิดกล้องสแกน Outbound Label</button>
         <div style="margin-top:10px;" class="row">
           <input type="text" id="manualCodeInput" class="mono" placeholder="หรือพิมพ์เลข Outbound label เอง" style="margin:0;">
@@ -418,7 +421,7 @@ const DICT = {
     trRemain:"ยังไม่มีชื่อพม่าอีก", trNone:"สินค้าทุกตัวมีชื่อพม่าแล้ว", trRunning:"กำลังแปล...",
     adminTitle:"ลบข้อมูล Outbound ทั้งหมด (Admin)", adminDesc:"ลบใบ Outbound และรายการสินค้าที่ import จาก Lois ทั้งหมด (Product Master ไม่ถูกลบ) กรอกเลขพนักงาน Admin แล้วกดลบ",
     btnDeleteAll:"ลบทั้งหมด", delTypeHint:"เลขพนักงาน Admin", delNeedWord:"กรอกเลขพนักงาน Admin ก่อน",
-    delConfirm:"ยืนยันลบข้อมูล Outbound ทั้งหมด? ย้อนกลับไม่ได้", delDone:"ลบข้อมูลแล้ว", delDenied:"เลขพนักงานนี้ไม่มีสิทธิ์ลบ", btnLoisPull:"ดึงจาก Lois (ย้อนหลัง 7 วัน)", loisSyncing:"กำลังเช็คข้อมูลล่าสุดจาก Lois...", loisSyncAt:"อัปเดตจาก Lois เมื่อ", loisSyncFail:"เชื่อม Lois ไม่ได้ — ข้อมูลอาจไม่ล่าสุด", loisSyncNone:"ไม่พบใบนี้ใน Lois (Work Date 7 วัน) — ใช้ข้อมูลที่ import ไว้", loisAdded:"Lois มีรายการเพิ่ม {n} รายการ — ต้องเช็คเพิ่ม", loisRemoved:"{n} รายการไม่อยู่ใน Lois แล้ว", noStore:"ใบนี้ไม่มีเลข Store — พิมพ์ไม่ได้ ตรวจข้อมูลใน Lois แล้ว import ใหม่", orUploadFile:"หรืออัปโหลดไฟล์ที่ Export จาก Lois เอง",
+    delConfirm:"ยืนยันลบข้อมูล Outbound ทั้งหมด? ย้อนกลับไม่ได้", delDone:"ลบข้อมูลแล้ว", delDenied:"เลขพนักงานนี้ไม่มีสิทธิ์ลบ", btnLoisPull:"ดึงจาก Lois (ย้อนหลัง 7 วัน)", dataAgeAt:"ดึงข้อมูลล่าสุดเมื่อ", dataAgeOld:"เกิน 1 ชม. — กด \"ดึงจาก Lois\" ในแท็บนำเข้าข้อมูล", dataAgeNone:"ยังไม่มีข้อมูล — กด \"ดึงจาก Lois\" ในแท็บนำเข้าข้อมูล", loisSyncing:"กำลังเช็คข้อมูลล่าสุดจาก Lois...", loisSyncAt:"อัปเดตจาก Lois เมื่อ", loisSyncFail:"เชื่อม Lois ไม่ได้ — ข้อมูลอาจไม่ล่าสุด", loisSyncNone:"ไม่พบใบนี้ใน Lois (Work Date 7 วัน) — ใช้ข้อมูลที่ import ไว้", loisAdded:"Lois มีรายการเพิ่ม {n} รายการ — ต้องเช็คเพิ่ม", loisRemoved:"{n} รายการไม่อยู่ใน Lois แล้ว", noStore:"ใบนี้ไม่มีเลข Store — พิมพ์ไม่ได้ ตรวจข้อมูลใน Lois แล้ว import ใหม่", orUploadFile:"หรืออัปโหลดไฟล์ที่ Export จาก Lois เอง",
     loisPulling:"กำลังล็อกอินและดึงข้อมูลจาก Lois...", loisPulled:"ดึงจาก Lois", loisRows:"แถว", loisFail:"ดึงจาก Lois ไม่สำเร็จ", loisCached:"ใช้ผลที่ดึงไว้เมื่อไม่ถึง 1 นาทีก่อน",
     impNew:"ใบใหม่", impUpdated:"อัปเดตใบที่ยังไม่เช็ค", impSkipped:"ข้ามใบที่เริ่มเช็คแล้ว", impItems:"รายการสินค้า",
     impNoMu:"รายการไม่พบใน Product Master (เช็คด้วยตนเอง)", impFailed:"ใบ import ไม่สำเร็จ", excelSaved:"ดาวน์โหลด Excel แล้ว", impSaving:"กำลังบันทึก...", colCheckedAt:"เวลาเช็ค", printLayout:"รูปแบบใบพิมพ์", orientLand:"แนวนอน", orientPort:"แนวตั้ง"
@@ -456,7 +459,7 @@ const DICT = {
     trRemain:"Still without Burmese name", trNone:"All products have Burmese names", trRunning:"Translating...",
     adminTitle:"Delete all Outbound data (Admin)", adminDesc:"Deletes all Outbound labels and items imported from Lois (Product Master is kept). Enter the admin employee ID, then press delete",
     btnDeleteAll:"Delete all", delTypeHint:"Admin employee ID", delNeedWord:"Enter the admin employee ID first",
-    delConfirm:"Delete ALL Outbound data? This cannot be undone", delDone:"Data deleted", delDenied:"This employee ID is not allowed to delete", btnLoisPull:"Pull from Lois (last 7 days)", loisSyncing:"Checking latest data from Lois...", loisSyncAt:"Updated from Lois at", loisSyncFail:"Cannot reach Lois — data may be out of date", loisSyncNone:"Not found in Lois (Work Date 7 days) — using imported data", loisAdded:"Lois has {n} new/changed item(s) — check them", loisRemoved:"{n} item(s) no longer in Lois", noStore:"This label has no Store number — cannot print. Check Lois and re-import", orUploadFile:"or upload a file exported from Lois",
+    delConfirm:"Delete ALL Outbound data? This cannot be undone", delDone:"Data deleted", delDenied:"This employee ID is not allowed to delete", btnLoisPull:"Pull from Lois (last 7 days)", dataAgeAt:"Last data pull", dataAgeOld:"over 1 hour — press \"Pull from Lois\" in Import tab", dataAgeNone:"No data yet — press \"Pull from Lois\" in Import tab", loisSyncing:"Checking latest data from Lois...", loisSyncAt:"Updated from Lois at", loisSyncFail:"Cannot reach Lois — data may be out of date", loisSyncNone:"Not found in Lois (Work Date 7 days) — using imported data", loisAdded:"Lois has {n} new/changed item(s) — check them", loisRemoved:"{n} item(s) no longer in Lois", noStore:"This label has no Store number — cannot print. Check Lois and re-import", orUploadFile:"or upload a file exported from Lois",
     loisPulling:"Logging in and pulling data from Lois...", loisPulled:"Pulled from Lois", loisRows:"rows", loisFail:"Pull from Lois failed", loisCached:"Using the result pulled less than 1 minute ago",
     impNew:"New labels", impUpdated:"Updated (not started)", impSkipped:"Skipped (check already started)", impItems:"items",
     impNoMu:"item(s) not in Product Master (check manually)", impFailed:"label(s) failed to import", excelSaved:"Excel downloaded", impSaving:"Saving...", colCheckedAt:"Checked at", printLayout:"Print layout", orientLand:"Landscape", orientPort:"Portrait"
@@ -494,7 +497,7 @@ const DICT = {
     trRemain:"မြန်မာအမည် မရှိသေး", trNone:"ပစ္စည်းအားလုံး မြန်မာအမည် ရှိပြီး", trRunning:"ဘာသာပြန်နေသည်...",
     adminTitle:"Outbound ဒေတာအားလုံး ဖျက်ရန် (Admin)", adminDesc:"Lois မှ သွင်းထားသော Outbound ဒေတာအားလုံး ဖျက်မည် (Product Master မဖျက်ပါ) Admin ဝန်ထမ်းနံပါတ် ထည့်ပြီး ဖျက်ပါ",
     btnDeleteAll:"အားလုံးဖျက်ရန်", delTypeHint:"Admin ဝန်ထမ်းနံပါတ်", delNeedWord:"Admin ဝန်ထမ်းနံပါတ် အရင်ထည့်ပါ",
-    delConfirm:"Outbound ဒေတာအားလုံး ဖျက်မည်လား? ပြန်ယူ၍မရပါ", delDone:"ဖျက်ပြီးပါပြီ", delDenied:"ဤဝန်ထမ်းနံပါတ်ဖြင့် ဖျက်ခွင့်မရှိပါ", btnLoisPull:"Lois မှ ဆွဲယူရန် (နောက်ကြောင်း ၇ ရက်)", loisSyncing:"Lois မှ နောက်ဆုံးဒေတာ စစ်နေသည်...", loisSyncAt:"Lois မှ အပ်ဒိတ်ချိန်", loisSyncFail:"Lois နှင့် ချိတ်မရပါ — ဒေတာ နောက်ဆုံးမဟုတ်နိုင်", loisSyncNone:"Lois တွင် မတွေ့ပါ — သွင်းထားသောဒေတာကို သုံးသည်", loisAdded:"Lois တွင် ပစ္စည်း {n} ခု ထပ်ပါ — ထပ်စစ်ပါ", loisRemoved:"{n} ခု Lois တွင် မရှိတော့ပါ", noStore:"ဤလေဘယ်တွင် Store နံပါတ် မရှိပါ — ပရင့်ထုတ်၍မရပါ", orUploadFile:"သို့မဟုတ် Lois မှ Export ဖိုင်ကို တင်ပါ",
+    delConfirm:"Outbound ဒေတာအားလုံး ဖျက်မည်လား? ပြန်ယူ၍မရပါ", delDone:"ဖျက်ပြီးပါပြီ", delDenied:"ဤဝန်ထမ်းနံပါတ်ဖြင့် ဖျက်ခွင့်မရှိပါ", btnLoisPull:"Lois မှ ဆွဲယူရန် (နောက်ကြောင်း ၇ ရက်)", dataAgeAt:"နောက်ဆုံး ဒေတာဆွဲယူချိန်", dataAgeOld:"၁ နာရီ ကျော်ပြီ — Import tab တွင် \"Lois မှ ဆွဲယူရန်\" နှိပ်ပါ", dataAgeNone:"ဒေတာ မရှိသေး — Import tab တွင် \"Lois မှ ဆွဲယူရန်\" နှိပ်ပါ", loisSyncing:"Lois မှ နောက်ဆုံးဒေတာ စစ်နေသည်...", loisSyncAt:"Lois မှ အပ်ဒိတ်ချိန်", loisSyncFail:"Lois နှင့် ချိတ်မရပါ — ဒေတာ နောက်ဆုံးမဟုတ်နိုင်", loisSyncNone:"Lois တွင် မတွေ့ပါ — သွင်းထားသောဒေတာကို သုံးသည်", loisAdded:"Lois တွင် ပစ္စည်း {n} ခု ထပ်ပါ — ထပ်စစ်ပါ", loisRemoved:"{n} ခု Lois တွင် မရှိတော့ပါ", noStore:"ဤလေဘယ်တွင် Store နံပါတ် မရှိပါ — ပရင့်ထုတ်၍မရပါ", orUploadFile:"သို့မဟုတ် Lois မှ Export ဖိုင်ကို တင်ပါ",
     loisPulling:"Lois သို့ ဝင်ရောက်ပြီး ဒေတာဆွဲယူနေသည်...", loisPulled:"Lois မှ ဆွဲယူပြီး", loisRows:"တန်း", loisFail:"Lois မှ ဆွဲယူ၍မရပါ", loisCached:"၁ မိနစ်အတွင်း ဆွဲထားသော ရလဒ်ကို သုံးသည်",
     impNew:"လေဘယ်အသစ်", impUpdated:"ပြင်ဆင်ပြီး (မစစ်ရသေး)", impSkipped:"ကျော်ခဲ့သည် (စစ်ဆေးပြီး/စစ်နေ)", impItems:"ပစ္စည်း",
     impNoMu:"Product Master တွင် မရှိ (ကိုယ်တိုင်စစ်ပါ)", impFailed:"လေဘယ် သွင်း၍မရ", excelSaved:"Excel ဒေါင်းလုဒ်ပြီး", impSaving:"သိမ်းနေသည်...", colCheckedAt:"စစ်ဆေးချိန်", printLayout:"ပရင့်ပုံစံ", orientLand:"အလျားလိုက်", orientPort:"ဒေါင်လိုက်"
@@ -729,7 +732,8 @@ async function syncFromLois_(labelCode){
     clearTimeout(timer);
     j = await res.json();
   }catch(e){ return { state: 'fail', error: e.message }; }
-  if(!j || !j.ok) return { state: 'fail', error: j && j.error };
+  // GAS ที่ยังไม่ได้ Deploy เวอร์ชันที่รู้จัก loisLabel จะตอบกลับแบบตัวแปลภาษา (ไม่มี rows) → ถือว่าเชื่อมไม่ได้
+  if(!j || !j.ok || !Array.isArray(j.rows)) return { state: 'fail', error: (j && j.error) || 'GAS ไม่รองรับ loisLabel (ยังไม่ได้ Deploy New version)' };
   const rows = (j.rows || []).filter(r => normalizeLabelCode_(r.BOX_NO) === labelCode);
   if(!rows.length) return { state: 'none' };
   const recs = rows.map(r => ({ label: r.BOX_NO, product: r.SKU_CD, name: r.CNNT, customer: r.CLNT_CD, qty: r.QTY }));
@@ -1480,6 +1484,7 @@ document.getElementById('importBtn').addEventListener('click', async ()=>{
     const res = await importOutboundRows_(recs, file.name, log);
     log.textContent = importSummaryText_(res);
     toast(res.failed.length ? T('impFailed') : T('importDone'));
+    loadDataAge_();
   }catch(err){
     log.textContent = 'Error: ' + err.message;
   }finally{
@@ -1540,6 +1545,7 @@ document.getElementById('loisPullBtn').addEventListener('click', async ()=>{
     const sum = await importOutboundRows_(recs, 'LOIS ' + (j.pulledAt || ''), log);
     log.textContent = head + `\n${T('excelSaved')}\n\n` + importSummaryText_(sum);
     toast(sum.failed.length ? T('impFailed') : T('importDone'));
+    loadDataAge_();
   }catch(err){
     log.textContent = T('loisFail') + ': ' + err.message;
   }finally{
@@ -1548,8 +1554,34 @@ document.getElementById('loisPullBtn').addEventListener('click', async ()=>{
 });
 
 /* ====================== Init ====================== */
+/* ====================== แถบ "ดึงข้อมูลล่าสุดเมื่อ" (หน้าสแกน) ======================
+   นับเฉพาะการดึงทั้งก้อน / import ไฟล์ (ไม่นับการเช็ค Lois ตอนสแกนทีละใบ) — เกิน 1 ชม. เป็นสีแดง */
+let dataAgeAt_ = null;
+async function loadDataAge_(){
+  const { data, error } = await sb.from('outbound_labels').select('imported_at')
+    .not('imported_batch', 'like', 'LOIS-SCAN%').order('imported_at', { ascending: false }).limit(1);
+  if(error) return;
+  dataAgeAt_ = (data && data[0] && data[0].imported_at) ? new Date(data[0].imported_at) : null;
+  renderDataAge_();
+}
+function renderDataAge_(){
+  const el = document.getElementById('dataAge');
+  if(!dataAgeAt_){ el.className = 'data-age old'; el.textContent = T('dataAgeNone'); return; }
+  const d = dataAgeAt_;
+  const sameDay = d.toDateString() === new Date().toDateString();
+  const when = (sameDay ? '' : d.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit' }) + ' ')
+    + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  const old = (Date.now() - d.getTime()) > 3600000;
+  el.className = 'data-age' + (old ? ' old' : '');
+  el.textContent = `${T('dataAgeAt')} ${when}` + (old ? ' · ' + T('dataAgeOld') : '');
+}
+document.getElementById('langSel').addEventListener('change', renderDataAge_);
+setInterval(renderDataAge_, 60000);   // เปลี่ยนเป็นสีแดงเองเมื่อครบ 1 ชม.
+setInterval(loadDataAge_, 300000);    // เผื่อเครื่องอื่นดึงข้อมูลใหม่
+
 applyI18n();
 loadStatusList();
+loadDataAge_();
 </script>
 </body>
 </html>
